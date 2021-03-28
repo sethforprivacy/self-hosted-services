@@ -1,0 +1,262 @@
+version: '3.5'
+services:
+  wallabag:
+    image: wallabag/wallabag:latest
+    container_name: wallabag
+    restart: unless-stopped
+    environment:
+      - MYSQL_ROOT_PASSWORD=${WALLABAG_DB_ROOT_PASS}
+      - SYMFONY__ENV__DATABASE_DRIVER=pdo_mysql
+      - SYMFONY__ENV__DATABASE_HOST=wallabag_db
+      - SYMFONY__ENV__DATABASE_PORT=3306
+      - SYMFONY__ENV__DATABASE_NAME=wallabag
+      - SYMFONY__ENV__DATABASE_USER=wallabag
+      - SYMFONY__ENV__DATABASE_PASSWORD=${WALLABAG_DB_PASS}
+      - SYMFONY__ENV__DATABASE_CHARSET=utf8mb4
+      - SYMFONY__ENV__MAILER_HOST=127.0.0.1
+      - SYMFONY__ENV__MAILER_USER=~
+      - SYMFONY__ENV__MAILER_PASSWORD=~
+      - SYMFONY__ENV__FROM_EMAIL=wallabag@example.com
+      - SYMFONY__ENV__DOMAIN_NAME=${WALLABAG_URL}
+      - SYMFONY__ENV__SERVER_NAME="Seth's Wallabag Instance"
+      - VIRTUAL_HOST=${WALLABAG_HOSTNAME}
+      - VIRTUAL_PORT=80
+      - LETSENCRYPT_HOST=${WALLABAG_HOSTNAME}
+      - LETSENCRYPT_EMAIL=${LE_EMAIL_ADDRESS}
+    volumes:
+      - wallabag:/var/www/wallabag/web/assets/images
+    healthcheck:
+      test: ["CMD", "wget" ,"--no-verbose", "--tries=1", "--spider", "http://localhost"]
+      interval: 1m
+      timeout: 3s
+    depends_on:
+      - wallabag_db
+      - redis
+  
+  wallabag_db:
+    image: mariadb:latest
+    container_name: wallabag_db
+    restart: unless-stopped
+    environment:
+      - MYSQL_ROOT_PASSWORD=${WALLABAG_DB_ROOT_PASS}
+    volumes:
+      - wallabag_db:/var/lib/mysql
+    healthcheck:
+      test: ["CMD", "mysqladmin" ,"ping", "-h", "localhost"]
+      interval: 1s
+      timeout: 3s
+      retries: 30
+
+  monerod:
+    image: sethsimmons/simple-monerod:latest
+    restart: unless-stopped
+    container_name: monerod
+    volumes:
+      - bitmonero:/home/monero
+    ports:
+      - 18080:18080
+      - 18089:18089
+    command:
+      - "--rpc-restricted-bind-ip=0.0.0.0"
+      - "--rpc-restricted-bind-port=18089"
+      - "--public-node"
+      - "--no-igd"
+      - "--enable-dns-blocklist"
+      - "--prune-blockchain"
+
+  yotter:
+    image: ytorg/yotter:latest
+    container_name: yotter
+    restart: unless-stopped
+    environment:
+      - DATABASE_URL=mysql+pymysql://yotter:${YOTTER_DB_PASS}@yotter_db:3306/yotter
+      - VIRTUAL_HOST=${YOTTER_HOSTNAME}
+      - VIRTUAL_PORT=5000
+      - LETSENCRYPT_HOST=${YOTTER_HOSTNAME}
+      - LETSENCRYPT_EMAIL=${LE_EMAIL_ADDRESS}
+    healthcheck:
+      test: ["CMD", "wget" ,"--no-verbose", "--tries=1", "--spider", "http://localhost:5000"]
+      interval: 1m
+      timeout: 3s
+    depends_on:
+      - yotter_db
+      - ytproxy
+    volumes:
+      - yotter_migrations:/usr/src/app/migrations
+      - ./yotter-config.json:/usr/src/app/yotter-config.json
+    
+  ytproxy:
+    image: 1337kavin/ytproxy:latest
+    container_name: ytproxy
+    restart: unless-stopped
+    volumes:
+      - "/var/run/ytproxy:/app/socket/"
+    network_mode: host
+
+  yotter_db:
+    image: mariadb:10.5
+    container_name: yotter_db
+    environment:
+      MYSQL_ROOT_PASSWORD: ${YOTTER_DB_ROOT_PASS}
+      MYSQL_DATABASE: yotter
+      MYSQL_USER: yotter
+      MYSQL_PASSWORD: ${YOTTER_DB_PASS}
+    restart: unless-stopped
+    volumes:
+      - yotter_mysql:/var/lib/mysql
+    healthcheck:
+      test: ["CMD", "mysqladmin" ,"ping", "-h", "localhost"]
+      interval: 1s
+      timeout: 3s
+      retries: 30
+
+  nitter:
+    volumes:
+        - ./nitter.conf:/src/nitter.conf
+    image: zedeus/nitter:latest
+    restart: unless-stopped
+    container_name: nitter
+    environment:
+      - VIRTUAL_HOST=${NITTER_HOSTNAME}
+      - VIRTUAL_PORT=8080
+      - LETSENCRYPT_HOST=${NITTER_HOSTNAME}
+      - LETSENCRYPT_EMAIL=${LE_EMAIL_ADDRESS}
+    healthcheck:
+      test: ["CMD", "wget" ,"--no-verbose", "--tries=1", "--spider", "http://localhost:8080"]
+      interval: 1m
+      timeout: 3s
+    depends_on:
+      - redis
+
+  teddit:
+    image: teddit/teddit:latest
+    container_name: teddit
+    restart: unless-stopped
+    environment:
+      - REDIS_HOST=redis
+      - VIRTUAL_HOST=${TEDDIT_HOSTNAME}
+      - VIRTUAL_PORT=8080
+      - LETSENCRYPT_HOST=${TEDDIT_HOSTNAME}
+      - LETSENCRYPT_EMAIL=${LE_EMAIL_ADDRESS}
+    volumes:
+      - ./teddit.js:/teddit/config.js
+    healthcheck:
+      test: ["CMD", "wget" ,"--no-verbose", "--tries=1", "--spider", "http://localhost:8080/about"]
+      interval: 1m
+      timeout: 3s
+    depends_on:
+      - redis
+
+  nextcloud:
+    image: nextcloud:apache
+    container_name: nextcloud
+    restart: unless-stopped
+    volumes:
+      - nextcloud:/var/www/html
+    environment:
+      - VIRTUAL_HOST=${NEXTCLOUD_HOSTNAME}
+      - LETSENCRYPT_HOST=${NEXTCLOUD_HOSTNAME}
+      - LETSENCRYPT_EMAIL=${LE_EMAIL_ADDRESS}
+      - NEXTCLOUD_ADMIN_USER=${NEXTCLOUD_ADMIN_USER}
+      - NEXTCLOUD_ADMIN_PASSWORD=${NEXTCLOUD_ADMIN_PASSWORD}
+      - POSTGRES_HOST=nextcloud_db
+      - POSTGRES_USER=usr
+      - POSTGRES_PASSWORD=${POSTGRES_PASSWORD}
+      - POSTGRES_DB=nextcloud
+    healthcheck:
+      test: ["CMD", "wget" ,"--no-verbose", "--tries=1", "--spider", "http://localhost"]
+      interval: 1m
+      timeout: 3s
+    depends_on:
+      - nextcloud_db
+
+  nextcloud_db:
+    image: postgres:alpine
+    container_name: nextcloud_db
+    restart: unless-stopped
+    volumes:
+      - nextcloud_db:/var/lib/postgresql/data
+    environment:
+      - POSTGRES_PASSWORD=${POSTGRES_PASSWORD}
+      - POSTGRES_DB=nextcloud
+      - POSTGRES_USER=usr
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  redis:
+    image: redis:alpine
+    container_name: redis
+    restart: unless-stopped
+    ports:
+      - "127.0.0.1:6379:6379"
+    volumes:
+      - redis-data:/var/lib/redis
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 1s
+      timeout: 3s
+      retries: 30
+
+  autoheal:
+    image: willfarrell/autoheal:latest
+    container_name: autoheal
+    restart: unless-stopped
+    environment:
+      AUTOHEAL_CONTAINER_LABEL: all
+    volumes:
+     - "/var/run/docker.sock:/var/run/docker.sock"
+
+  watchtower:
+    image: containrrr/watchtower:latest
+    container_name: watchtower
+    restart: unless-stopped
+    volumes:
+      - "/var/run/docker.sock:/var/run/docker.sock"
+
+  nginx-proxy:
+    image: jwilder/nginx-proxy:latest
+    container_name: nginx-proxy
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - conf:/etc/nginx/conf.d
+      - vhost:/etc/nginx/vhost.d
+      - html:/usr/share/nginx/html
+      - dhparam:/etc/nginx/dhparam
+      - certs:/etc/nginx/certs:ro
+      - /var/run/docker.sock:/tmp/docker.sock:ro
+
+  letsencrypt:
+    image: jrcs/letsencrypt-nginx-proxy-companion:latest
+    container_name: nginx-proxy-le
+    volumes:
+      - certs:/etc/nginx/certs:rw
+      - acme:/etc/acme.sh
+      - /var/run/docker.sock:/var/run/docker.sock:ro
+    environment:
+      - NGINX_PROXY_CONTAINER=nginx-proxy
+
+volumes:
+  bitmonero:
+  yotter_mysql:
+  yotter_migrations:
+  redis-data:
+  nextcloud:
+  nextcloud_db:
+  wallabag:
+  wallabag_db:
+  conf:
+  vhost:
+  html:
+  dhparam:
+  certs:
+  acme:
+
+networks:
+  default:
+    external:
+      name: webproxy
