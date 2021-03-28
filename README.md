@@ -26,6 +26,8 @@ This repository contains everything you need to start self-hosting a core set of
 * [Yotter](https://github.com/ytorg/yotter)
   * A privacy-preserving YouTube and Twitter front-end
 
+*NOTE: If you do not want to run one of the services above simply comment out or delete the relevant service section.*
+
 # How does it work?
 
 This repo relies on Docker Compose to configure and run all of the above services, leveraging [nginx-proxy](https://github.com/nginx-proxy/nginx-proxy) and [docker-letsencrypt-nginx-proxy-companion](https://github.com/nginx-proxy/docker-letsencrypt-nginx-proxy-companion) to automatically expose each service, request and maintain Let's Encrypt certificates for SSL, and handle all proxying.
@@ -87,3 +89,24 @@ Start-up the services with Docker Compose:
 Each service included has a rudimentary health-check configured to allow [docker-autoheal](https://github.com/willfarrell/docker-autoheal) to restart any services that may fail.
 
 Automatic updates are provided by the [Watchtower](https://containrrr.dev/watchtower/) container that watches and updates base images of services when available.
+
+# Getting Started
+
+As this simply helps you get these services running, using each service is outside of the scope of this project. However, below are some links for getting started with each:
+
+* [Nextcloud](https://docs.nextcloud.com/server/21/user_manual/en/)
+* [Monero](https://sethsimmons.me/guides/run-a-monero-node/#sending-commands-to-your-node)
+* [Nitter](https://nitter.net/about)
+* [Teddit](https://codeberg.org/teddit/teddit)
+* [Wallabag](https://www.wallabag.it/en/features)
+* [Yotter](https://github.com/ytorg/yotter)
+
+# Donations
+
+If you decide to run this and use these services, please don't forget to donate to those people making these services a reality!
+
+* [Monero](https://ccs.getmonero.org/funding-required/)
+* [Nitter](https://github.com/zedeus/nitter#nitter)
+* [Teddit](https://codeberg.org/teddit/teddit#teddit)
+* [Wallabag](https://liberapay.com/wallabag/donate)
+* [Yotter](https://github.com/pluja/pluja/blob/main/SUPPORT.md)
