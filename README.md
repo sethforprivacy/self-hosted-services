@@ -1,6 +1,6 @@
 # self-hosted-services
 
-This repository contains everything you need to start self-hosting a core set of privacy-preserving services that I have found helpful, all run via a common [Docker Compose](https://docs.docker.com/compose/) configuration using Let's Encrypt for SSL certificates.
+This repository contains everything you need to start self-hosting a core set of privacy-preserving services that I have found helpful, all run via a common [Docker Compose](https://docs.docker.com/compose/) configuration using [Let's Encrypt](https://letsencrypt.org/) for SSL certificates.
 
 # Requirements
 
@@ -8,7 +8,7 @@ This repository contains everything you need to start self-hosting a core set of
 * [Docker Engine](https://docs.docker.com/engine/install/)
 * [Docker Compose](https://docs.docker.com/compose/install/)
 * Ports `80/tcp`, `443/tcp`, `18080/tcp`, and `18089/tcp` exposed/forwarded to the host
-* DNS entries for your domain and each desired sub-domain
+* DNS entries for your top-level domain and each desired sub-domain
 
 # Included Services
 
@@ -23,8 +23,6 @@ This repository contains everything you need to start self-hosting a core set of
   * A privacy-preserving Reddit front-end
 * [Wallabag](https://github.com/wallabag/wallabag)
   * A privacy-preserving article reader in the vein of Pocket
-* [Yotter](https://github.com/ytorg/yotter)
-  * A privacy-preserving YouTube and Twitter front-end
 
 *NOTE: If you do not want to run one of the services above simply comment out or delete the relevant service section.*
 
@@ -42,11 +40,6 @@ You will need to clone this repository to the host you want running these servic
 Once cloned, set the necessary passwords and desired sub-domains in the `.env` file (*PLEASE DO NOT COPY THE FOLLOWING CONFIG, CHANGE THE PASSWORDS AND HOSTNAMES APPROPRIATELY IN YOUR LOCAL `.env` FILE*):
 
 ```
-# Yotter Variables
-YOTTER_HOSTNAME=yotter.mydomain.com
-YOTTER_DB_ROOT_PASS=changeme
-YOTTER_DB_PASS=changeme
-
 # Nextcloud Variables
 NEXTCLOUD_HOSTNAME=nextcloud.mydomain.com
 NEXTCLOUD_ADMIN_USER=admin
@@ -77,8 +70,6 @@ Edit the Nitter, Teddit, and Yotter configuration files:
   * Replace the `hostname`, `replaceTwitter`, and `replaceYouTube` values with the relevant hostnames
 * Teddit
   * Replace the `domain` value with the proper Teddit hostname
-* Yotter
-  * Replace the `serverName` and `nitterInstance` values with the relevant hostnames
 
 Start-up the services with Docker Compose:
 
@@ -107,7 +98,6 @@ As this simply helps you get these services running, using each service is outsi
 * [Nitter](https://nitter.net/about)
 * [Teddit](https://codeberg.org/teddit/teddit)
 * [Wallabag](https://www.wallabag.it/en/features)
-* [Yotter](https://github.com/ytorg/yotter)
 
 # Donations
 
@@ -117,4 +107,8 @@ If you decide to run this and use these services, please don't forget to donate 
 * [Nitter](https://github.com/zedeus/nitter#nitter)
 * [Teddit](https://codeberg.org/teddit/teddit#teddit)
 * [Wallabag](https://liberapay.com/wallabag/donate)
-* [Yotter](https://github.com/pluja/pluja/blob/main/SUPPORT.md)
+
+# Future Potential Services
+
+* [Yotter](https://github.com/ytorg/yotter)
+  * A privacy-preserving YouTube and Twitter front-end
