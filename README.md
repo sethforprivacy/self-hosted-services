@@ -132,3 +132,16 @@ If you decide to run this and use these services, please don't forget to donate 
 
 * [Yotter](https://github.com/ytorg/yotter)
   * A privacy-preserving YouTube and Twitter front-end
+
+## Additional Resources
+
+* [Docker Compose documentation](https://docs.docker.com/compose/)
+
+## Additional Credits
+
+* https://github.com/cmehay/docker-tor-hidden-service
+  * This Docker container makes it incredibly easy to expose Tor Hidden Services of other running containers
+* https://github.com/containrrr/watchtower
+  * Watchtower automates updating base images for other running containers
+* https://github.com/willfarrell/docker-autoheal
+  * Utilizes Docker-Compose healthchecks to restart containers that fail their healthcheck for any reason
