@@ -186,6 +186,24 @@ services:
       timeout: 5s
       retries: 5
 
+  tor:
+    image: goldy/tor-hidden-service:latest
+    container_name: tor
+    restart: unless-stopped
+    links:
+      - monerod
+      - nitter
+      - teddit
+    environment:
+      SERVICE1_TOR_SERVICE_HOSTS: 18089:monerod:18089
+      SERVICE1_TOR_SERVICE_VERSION: '3'
+      SERVICE2_TOR_SERVICE_HOSTS: 8080:nitter:8080
+      SERVICE2_TOR_SERVICE_VERSION: '3'
+      SERVICE3_TOR_SERVICE_HOSTS: 8080:teddit:8080
+      SERVICE3_TOR_SERVICE_VERSION: '3'
+    volumes:
+      - tor-keys:/var/lib/tor/hidden_service/
+
   redis:
     image: redis:alpine
     container_name: redis
@@ -249,6 +267,7 @@ volumes:
   nextcloud_db:
   wallabag:
   wallabag_db:
+  tor-keys:
   conf:
   vhost:
   html:

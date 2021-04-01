@@ -84,6 +84,14 @@ Start-up the services with Docker Compose:
 
 `docker-compose up -d`
 
+# Tor Support
+
+Currently only Monero, Nitter, and Teddit get default Tor support, but I will likely expand that in the future. To list Onion services, simply run:
+
+```bash
+docker exec -ti tor onions
+```
+
 # Auto-healing and Updates
 
 Each service included has a rudimentary health-check configured to allow [docker-autoheal](https://github.com/willfarrell/docker-autoheal) to restart any services that may fail.
