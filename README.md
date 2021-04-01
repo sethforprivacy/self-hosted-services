@@ -66,7 +66,7 @@ LE_EMAIL_ADDRESS=myemail@pm.me
 
 Note that all hostnames used must already have DNS entries configured with your domain provider in order for certificate generation to function properly.
 
-Edit the Nitter, Teddit, and Yotter configuration files:
+Edit the Nitter and Teddit configuration files:
 
 * Nitter
   * Replace the `hostname`, `replaceTwitter`, and `replaceYouTube` values with the relevant hostnames
