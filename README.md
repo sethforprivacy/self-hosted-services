@@ -66,12 +66,10 @@ LE_EMAIL_ADDRESS=myemail@pm.me
 
 Note that all hostnames used must already have DNS entries configured with your domain provider in order for certificate generation to function properly.
 
-Edit the Nitter and Teddit configuration files:
+Edit the Nitter configuration file:
 
 * Nitter
   * Replace the `hostname`, `replaceTwitter`, and `replaceYouTube` values with the relevant hostnames
-* Teddit
-  * Replace the `domain` value with the proper Teddit hostname
 
 Start-up the services with Docker Compose:
 

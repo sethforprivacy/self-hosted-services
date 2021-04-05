@@ -92,8 +92,11 @@ services:
       - VIRTUAL_PORT=8080
       - LETSENCRYPT_HOST=${TEDDIT_HOSTNAME}
       - LETSENCRYPT_EMAIL=${LE_EMAIL_ADDRESS}
-    volumes:
-      - ./teddit.js:/teddit/config.js
+      - DOMAIN=${TEDDIT_HOSTNAME}
+      - THEME=dark
+      - HTTPS_ENABLED=false
+      - REDIRECT_HTTP_TO_HTTPS=false
+      - REDIRECT_WWW=false
     healthcheck:
       test: ["CMD", "wget" ,"--no-verbose", "--tries=1", "--spider", "http://localhost:8080/about"]
       interval: 1m
