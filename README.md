@@ -28,7 +28,7 @@ This repository contains everything you need to start self-hosting a core set of
 
 ## How does it work?
 
-This repo relies on Docker Compose to configure and run all of the above services, leveraging [nginx-proxy](https://github.com/nginx-proxy/nginx-proxy) and [docker-letsencrypt-nginx-proxy-companion](https://github.com/nginx-proxy/docker-letsencrypt-nginx-proxy-companion) to automatically expose each service, request and maintain Let's Encrypt certificates for SSL, and handle all proxying.
+This repo relies on Docker Compose to configure and run all of the above services, leveraging Traefik to automatically expose each service, [request and maintain](https://doc.traefik.io/traefik/user-guides/docker-compose/acme-tls/) Let's Encrypt certificates for SSL, and handle all proxying.
 
 ## Starting the Services
 
