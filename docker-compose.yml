@@ -1,5 +1,24 @@
 version: '3.5'
 services:
+  traefik:
+    image: "traefik:v2.4"
+    container_name: "traefik"
+    command:
+      #- "--log.level=DEBUG"
+      - "--api.insecure=true"
+      - "--providers.docker=true"
+      - "--providers.docker.exposedbydefault=false"
+      - "--entrypoints.websecure.address=:443"
+      - "--certificatesresolvers.selfhostedservices.acme.tlschallenge=true"
+      - "--certificatesresolvers.selfhostedservices.acme.email=${LE_EMAIL_ADDRESS}"
+      - "--certificatesresolvers.selfhostedservices.acme.storage=/letsencrypt/acme.json"
+    ports:
+      - "443:443"
+      - "8080:8080"
+    volumes:
+      - "./letsencrypt:/letsencrypt"
+      - "/var/run/docker.sock:/var/run/docker.sock:ro"
+
   wallabag:
     image: wallabag/wallabag:latest
     container_name: wallabag
@@ -19,10 +38,6 @@ services:
       - SYMFONY__ENV__FROM_EMAIL=wallabag@example.com
       - SYMFONY__ENV__DOMAIN_NAME=${WALLABAG_URL}
       - SYMFONY__ENV__SERVER_NAME="Seth's Wallabag Instance"
-      - VIRTUAL_HOST=${WALLABAG_HOSTNAME}
-      - VIRTUAL_PORT=80
-      - LETSENCRYPT_HOST=${WALLABAG_HOSTNAME}
-      - LETSENCRYPT_EMAIL=${LE_EMAIL_ADDRESS}
     volumes:
       - wallabag:/var/www/wallabag/web/assets/images
     healthcheck:
@@ -32,6 +47,11 @@ services:
     depends_on:
       - wallabag_db
       - redis
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.wallabag.rule=Host(`${WALLABAG_HOSTNAME}`)"
+      - "traefik.http.routers.wallabag.entrypoints=websecure"
+      - "traefik.http.routers.wallabag.tls.certresolver=selfhostedservices"
   
   wallabag_db:
     image: mariadb:latest
@@ -70,17 +90,18 @@ services:
     image: zedeus/nitter:latest
     restart: unless-stopped
     container_name: nitter
-    environment:
-      - VIRTUAL_HOST=${NITTER_HOSTNAME}
-      - VIRTUAL_PORT=8080
-      - LETSENCRYPT_HOST=${NITTER_HOSTNAME}
-      - LETSENCRYPT_EMAIL=${LE_EMAIL_ADDRESS}
     healthcheck:
       test: ["CMD", "wget" ,"--no-verbose", "--tries=1", "--spider", "http://localhost:8080"]
       interval: 1m
       timeout: 3s
     depends_on:
       - redis
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.nitter.rule=Host(`${NITTER_HOSTNAME}`)"
+      - "traefik.http.services.nitter.loadbalancer.server.port=8080"
+      - "traefik.http.routers.nitter.entrypoints=websecure"
+      - "traefik.http.routers.nitter.tls.certresolver=selfhostedservices"
 
   teddit:
     image: teddit/teddit:latest
@@ -88,10 +109,6 @@ services:
     restart: unless-stopped
     environment:
       - REDIS_HOST=redis
-      - VIRTUAL_HOST=${TEDDIT_HOSTNAME}
-      - VIRTUAL_PORT=8080
-      - LETSENCRYPT_HOST=${TEDDIT_HOSTNAME}
-      - LETSENCRYPT_EMAIL=${LE_EMAIL_ADDRESS}
       - DOMAIN=${TEDDIT_HOSTNAME}
       - THEME=dark
       - HTTPS_ENABLED=false
@@ -103,6 +120,12 @@ services:
       timeout: 3s
     depends_on:
       - redis
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.teddit.rule=Host(`${TEDDIT_HOSTNAME}`)"
+      - "traefik.http.services.teddit.loadbalancer.server.port=8080"
+      - "traefik.http.routers.teddit.entrypoints=websecure"
+      - "traefik.http.routers.teddit.tls.certresolver=selfhostedservices"
 
   nextcloud:
     image: nextcloud:apache
@@ -111,21 +134,37 @@ services:
     volumes:
       - nextcloud:/var/www/html
     environment:
-      - VIRTUAL_HOST=${NEXTCLOUD_HOSTNAME}
-      - LETSENCRYPT_HOST=${NEXTCLOUD_HOSTNAME}
-      - LETSENCRYPT_EMAIL=${LE_EMAIL_ADDRESS}
       - NEXTCLOUD_ADMIN_USER=${NEXTCLOUD_ADMIN_USER}
       - NEXTCLOUD_ADMIN_PASSWORD=${NEXTCLOUD_ADMIN_PASSWORD}
+      - NEXTCLOUD_TRUSTED_DOMAINS=${NEXTCLOUD_HOSTNAME}
+      - TRUSTED_PROXIES=172.16.0.0/12
       - POSTGRES_HOST=nextcloud_db
-      - POSTGRES_USER=usr
+      - POSTGRES_USER=nextcloud
       - POSTGRES_PASSWORD=${POSTGRES_PASSWORD}
       - POSTGRES_DB=nextcloud
-    healthcheck:
-      test: ["CMD", "wget" ,"--no-verbose", "--tries=1", "--spider", "http://localhost"]
-      interval: 1m
-      timeout: 3s
+      - REDIS_HOST=redis
+    # TODO: Fix healthcheck, breaks Traefik due to trusted domains
+    # healthcheck:
+    #   test: ["CMD", "wget" ,"--no-verbose", "--tries=1", "--spider", "http://localhost"]
+    #   interval: 1m
+    #   timeout: 3s
     depends_on:
       - nextcloud_db
+      - redis
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.nextcloud.rule=Host(`${NEXTCLOUD_HOSTNAME}`)"
+      - "traefik.http.routers.nextcloud.middlewares=nextcloud,nextcloud_redirect"
+      - "traefik.http.routers.nextcloud.entrypoints=websecure"
+      - "traefik.http.middlewares.nextcloud.headers.stsSeconds=155520011"
+      - "traefik.http.middlewares.nextcloud.headers.stsIncludeSubdomains=true"
+      - "traefik.http.middlewares.nextcloud.headers.stsPreload=true"
+      - "traefik.http.middlewares.nextcloud.headers.contentTypeNosniff=true"
+      - "traefik.http.middlewares.nextcloud.headers.browserXSSFilter=true"
+      - "traefik.http.middlewares.nextcloud_redirect.redirectregex.permanent=true"
+      - "traefik.http.middlewares.nextcloud_redirect.redirectregex.regex=/.well-known/(card|cal)dav"
+      - "traefik.http.middlewares.nextcloud_redirect.redirectregex.replacement=/remote.php/dav/"
+      - "traefik.http.routers.nextcloud.tls.certresolver=selfhostedservices"
 
   nextcloud_db:
     image: postgres:alpine
@@ -136,9 +175,9 @@ services:
     environment:
       - POSTGRES_PASSWORD=${POSTGRES_PASSWORD}
       - POSTGRES_DB=nextcloud
-      - POSTGRES_USER=usr
+      - POSTGRES_USER=nextcloud
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      test: ["CMD-SHELL", "pg_isready -U nextcloud"]
       interval: 10s
       timeout: 5s
       retries: 5
@@ -154,9 +193,9 @@ services:
     environment:
       SERVICE1_TOR_SERVICE_HOSTS: 18089:monerod:18089
       SERVICE1_TOR_SERVICE_VERSION: '3'
-      SERVICE2_TOR_SERVICE_HOSTS: 8080:nitter:8080
+      SERVICE2_TOR_SERVICE_HOSTS: 80:nitter:8080
       SERVICE2_TOR_SERVICE_VERSION: '3'
-      SERVICE3_TOR_SERVICE_HOSTS: 8080:teddit:8080
+      SERVICE3_TOR_SERVICE_HOSTS: 80:teddit:8080
       SERVICE3_TOR_SERVICE_VERSION: '3'
     volumes:
       - tor-keys:/var/lib/tor/hidden_service/
@@ -191,30 +230,6 @@ services:
     volumes:
       - "/var/run/docker.sock:/var/run/docker.sock"
 
-  nginx-proxy:
-    image: jwilder/nginx-proxy:latest
-    container_name: nginx-proxy
-    ports:
-      - "80:80"
-      - "443:443"
-    volumes:
-      - conf:/etc/nginx/conf.d
-      - vhost:/etc/nginx/vhost.d
-      - html:/usr/share/nginx/html
-      - dhparam:/etc/nginx/dhparam
-      - certs:/etc/nginx/certs:ro
-      - /var/run/docker.sock:/tmp/docker.sock:ro
-
-  letsencrypt:
-    image: jrcs/letsencrypt-nginx-proxy-companion:latest
-    container_name: nginx-proxy-le
-    volumes:
-      - certs:/etc/nginx/certs:rw
-      - acme:/etc/acme.sh
-      - /var/run/docker.sock:/var/run/docker.sock:ro
-    environment:
-      - NGINX_PROXY_CONTAINER=nginx-proxy
-
 volumes:
   bitmonero:
   yotter_mysql:
@@ -225,14 +240,3 @@ volumes:
   wallabag:
   wallabag_db:
   tor-keys:
-  conf:
-  vhost:
-  html:
-  dhparam:
-  certs:
-  acme:
-
-networks:
-  default:
-    external:
-      name: webproxy
