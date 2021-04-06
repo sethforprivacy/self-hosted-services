@@ -7,7 +7,7 @@ This repository contains everything you need to start self-hosting a core set of
 * [Git](https://git-scm.com/downloads)
 * [Docker Engine](https://docs.docker.com/engine/install/)
 * [Docker Compose](https://docs.docker.com/compose/install/)
-* Ports `80/tcp`, `443/tcp`, `18080/tcp`, and `18089/tcp` exposed/forwarded to the host
+* Ports `443/tcp`, `18080/tcp`, and `18089/tcp` exposed/forwarded to the host
 * DNS entries for your top-level domain and each desired sub-domain
 
 ## Included Services
@@ -23,6 +23,8 @@ This repository contains everything you need to start self-hosting a core set of
   * A privacy-preserving Reddit front-end
 * [Wallabag](https://github.com/wallabag/wallabag)
   * A privacy-preserving article reader in the vein of Pocket
+* [Traefik Dashboard](https://doc.traefik.io/traefik/operations/dashboard/)
+  * A dashboard for viewing stats and status of services running behind Traefik
 
 *NOTE: If you do not want to run one of the services above simply comment out or delete the relevant service section from `docker-compose.yml`.*
 

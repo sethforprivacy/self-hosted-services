@@ -6,6 +6,7 @@ services:
     command:
       #- "--log.level=DEBUG"
       - "--api.insecure=true"
+      - "--api.dashboard=true"
       - "--providers.docker=true"
       - "--providers.docker.exposedbydefault=false"
       - "--entrypoints.websecure.address=:443"
@@ -14,10 +15,15 @@ services:
       - "--certificatesresolvers.selfhostedservices.acme.storage=/letsencrypt/acme.json"
     ports:
       - "443:443"
-      - "8080:8080"
     volumes:
       - "./letsencrypt:/letsencrypt"
       - "/var/run/docker.sock:/var/run/docker.sock:ro"
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.dashboard.rule=Host(`${TRAEFIK_HOSTNAME}`) && PathPrefix(`/dashboard`))"
+      - "traefik.http.routers.dashboard.service=api@internal"
+      - "traefik.http.routers.dashboard.entrypoints=websecure"
+      - "traefik.http.routers.dashboard.tls.certresolver=selfhostedservices"
 
   wallabag:
     image: wallabag/wallabag:latest
@@ -232,8 +238,6 @@ services:
 
 volumes:
   bitmonero:
-  yotter_mysql:
-  yotter_migrations:
   redis-data:
   nextcloud:
   nextcloud_db:
