@@ -18,12 +18,33 @@ services:
     volumes:
       - "./letsencrypt:/letsencrypt"
       - "/var/run/docker.sock:/var/run/docker.sock:ro"
-    labels:
-      - "traefik.enable=true"
-      - "traefik.http.routers.dashboard.rule=Host(`${TRAEFIK_HOSTNAME}`) && PathPrefix(`/dashboard`))"
-      - "traefik.http.routers.dashboard.service=api@internal"
-      - "traefik.http.routers.dashboard.entrypoints=websecure"
-      - "traefik.http.routers.dashboard.tls.certresolver=selfhostedservices"
+      labels:
+        - "traefik.enable=true"
+        - "traefik.http.routers.traefik_dashboard.rule=Host(`${TRAEFIK_HOSTNAME}`) && (PathPrefix(`/api`) || PathPrefix(`/dashboard`))"
+        - "traefik.http.routers.traefik_dashboard.service=api@internal"
+        - "traefik.http.routers.traefik_dashboard.entrypoints=websecure"
+        - "traefik.http.routers.traefik_dashboard.tls.certresolver=selfhostedservices"
+  
+    heimdall:
+      image: linuxserver/heimdall
+      container_name: heimdall
+      volumes:
+        - heimdall:/config
+      environment:
+        - PUID=1000
+        - PGID=1000
+        - TZ=${HEIMDALL_TZ}
+      restart: unless-stopped
+      healthcheck:
+        test: ["CMD", "wget" ,"--no-verbose", "--tries=1", "--spider", "http://localhost"]
+        interval: 1m
+        timeout: 3s
+      labels:
+        - "traefik.enable=true"
+        - "traefik.http.routers.dashboard.rule=Host(`${DASHBOARD_HOSTNAME}`)"
+        - "traefik.http.services.dashboard.loadbalancer.server.port=80"
+        - "traefik.http.routers.dashboard.entrypoints=websecure"
+        - "traefik.http.routers.dashboard.tls.certresolver=selfhostedservices"
 
   wallabag:
     image: wallabag/wallabag:latest
@@ -238,6 +259,7 @@ services:
 
 volumes:
   bitmonero:
+  heimdall:
   redis-data:
   nextcloud:
   nextcloud_db:

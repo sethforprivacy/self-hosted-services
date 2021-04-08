@@ -23,7 +23,7 @@ This repository contains everything you need to start self-hosting a core set of
   * A privacy-preserving Reddit front-end
 * [Wallabag](https://github.com/wallabag/wallabag)
   * A privacy-preserving article reader in the vein of Pocket
-* [Traefik Dashboard](https://doc.traefik.io/traefik/operations/dashboard/)
+* [Heimdall Dashboard](https://heimdall.site/)
   * A dashboard for viewing stats and status of services running behind Traefik
 
 *NOTE: If you do not want to run one of the services above simply comment out or delete the relevant service section from `docker-compose.yml`.*
@@ -43,17 +43,17 @@ cd self-hosted-services
 
 Once cloned, set the necessary passwords and desired sub-domains in the `.env` file (*PLEASE DO NOT COPY THE FOLLOWING CONFIG, CHANGE THE PASSWORDS AND HOSTNAMES APPROPRIATELY IN YOUR LOCAL `.env` FILE*):
 
-```
+```ini
 # Nextcloud Variables
 NEXTCLOUD_HOSTNAME=nextcloud.mydomain.com
-NEXTCLOUD_ADMIN_USER=admin
-NEXTCLOUD_ADMIN_PASSWORD=changeme
-POSTGRES_PASSWORD=changeme
+NEXTCLOUD_ADMIN_USER=
+NEXTCLOUD_ADMIN_PASSWORD=
+POSTGRES_PASSWORD=
 
 # Wallabag Variables
 WALLABAG_HOSTNAME=wallabag.mydomain.com
-WALLABAG_DB_ROOT_PASS=changeme
-WALLABAG_DB_PASS=changeme
+WALLABAG_DB_ROOT_PASS=
+WALLABAG_DB_PASS=
 WALLABAG_URL=https://wallabag.mydomain.com
 
 # Teddit Variables
@@ -61,6 +61,13 @@ TEDDIT_HOSTNAME=teddit.mydomain.com
 
 # Nitter Variables
 NITTER_HOSTNAME=nitter.mydomain.com
+
+# Traefik Variables
+TRAEFIK_HOSTNAME=traefik.mydomain.com
+
+# Heimdall Variables
+DASHBOARD_HOSTNAME=dashboard.mydomain.com
+DASHBOARD_TZ=America/New York
 
 # Let's Encrypt Variables
 LE_EMAIL_ADDRESS=myemail@pm.me
@@ -127,11 +134,14 @@ If you decide to run this and use these services, please don't forget to donate 
 * [Nitter](https://github.com/zedeus/nitter#nitter)
 * [Teddit](https://codeberg.org/teddit/teddit#teddit)
 * [Wallabag](https://liberapay.com/wallabag/donate)
+* [Heimdall](https://github.com/linuxserver/Heimdall)
 
 ## Potential Future Services
 
 * [Yotter](https://github.com/ytorg/yotter)
   * A privacy-preserving YouTube and Twitter front-end
+* [Plex](https://docs.linuxserver.io/images/docker-plex)
+  * A self-hosted media server
 
 ## Additional Resources
 
