@@ -3,6 +3,7 @@ services:
   traefik:
     image: "traefik:v2.4"
     container_name: "traefik"
+    restart: unless-stopped
     command:
       #- "--log.level=DEBUG"
       - "--api.insecure=true"
@@ -28,6 +29,7 @@ services:
     heimdall:
       image: linuxserver/heimdall
       container_name: heimdall
+      restart: unless-stopped
       volumes:
         - heimdall:/config
       environment:
