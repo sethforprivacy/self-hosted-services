@@ -220,12 +220,12 @@ services:
       - nitter
       - teddit
     environment:
-      SERVICE1_TOR_SERVICE_HOSTS: 18089:monerod:18089
-      SERVICE1_TOR_SERVICE_VERSION: '3'
-      SERVICE2_TOR_SERVICE_HOSTS: 80:nitter:8080
-      SERVICE2_TOR_SERVICE_VERSION: '3'
-      SERVICE3_TOR_SERVICE_HOSTS: 80:teddit:8080
-      SERVICE3_TOR_SERVICE_VERSION: '3'
+      MONEROD_TOR_SERVICE_HOSTS: 18089:monerod:18089
+      MONEROD_TOR_SERVICE_VERSION: '3'
+      NITTER_TOR_SERVICE_HOSTS: 80:nitter:8080
+      NITTER_TOR_SERVICE_VERSION: '3'
+      TEDDIT_TOR_SERVICE_HOSTS: 80:teddit:8080
+      TEDDIT_TOR_SERVICE_VERSION: '3'
     volumes:
       - tor-keys:/var/lib/tor/hidden_service/
 
