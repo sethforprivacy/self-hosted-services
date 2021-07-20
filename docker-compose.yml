@@ -210,6 +210,13 @@ services:
       interval: 10s
       timeout: 5s
       retries: 5
+      
+  nextcloud_cron:
+    image: nextcloud:apache
+    restart: unless-stopped
+    volumes:
+      - nextcloud:/var/www/html
+    entrypoint: /cron.sh
 
   tor:
     image: goldy/tor-hidden-service:latest
