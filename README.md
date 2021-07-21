@@ -121,7 +121,7 @@ docker-compose logs --follow monerod
 As this simply helps you get these services running, using each service is outside of the scope of this project. However, below are some links for getting started with each:
 
 * [Nextcloud](https://docs.nextcloud.com/server/21/user_manual/en/)
-* [Monero](https://sethsimmons.me/guides/run-a-monero-node/#sending-commands-to-your-node)
+* [Monero](https://sethforprivacy.com/guides/run-a-monero-node/#sending-commands-to-your-node)
 * [Nitter](https://nitter.net/about)
 * [Teddit](https://codeberg.org/teddit/teddit)
 * [Wallabag](https://www.wallabag.it/en/features)
