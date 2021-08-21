@@ -227,6 +227,13 @@ services:
       - nitter
       - teddit
     environment:
+      TOR_ENABLE_VANGUARDS: 'true'
+
+      VANGUARDS_EXTRA_OPTIONS: |
+        [Global]
+        enable_cbtverify = True
+        loglevel = INFO
+
       MONEROD_TOR_SERVICE_HOSTS: 18089:monerod:18089
       MONEROD_TOR_SERVICE_VERSION: '3'
       NITTER_TOR_SERVICE_HOSTS: 80:nitter:8080
