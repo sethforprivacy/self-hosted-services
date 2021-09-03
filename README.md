@@ -138,8 +138,8 @@ If you decide to run this and use these services, please don't forget to donate 
 
 ## Potential Future Services
 
-* [Yotter](https://github.com/ytorg/yotter)
-  * A privacy-preserving YouTube and Twitter front-end
+* [Piped](https://github.com/TeamPiped/Piped)
+  * A privacy-preserving YouTube front-end
 * [Plex](https://docs.linuxserver.io/images/docker-plex)
   * A self-hosted media server
 
