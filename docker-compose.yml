@@ -235,7 +235,6 @@ services:
       - nitter
       - teddit
       - privatebin
-      - whoogle-search
     environment:
       MONEROD_TOR_SERVICE_HOSTS: 18089:monerod:18089
       MONEROD_TOR_SERVICE_VERSION: '3'
