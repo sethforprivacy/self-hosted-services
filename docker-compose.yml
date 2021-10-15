@@ -1,30 +1,25 @@
 version: '3.5'
 services:
   traefik:
-    image: "traefik:v2.4"
+    image: "traefik:v2.5"
     container_name: "traefik"
     restart: unless-stopped
     command:
-      #- "--log.level=DEBUG"
-      - "--api.insecure=true"
-      - "--api.dashboard=true"
       - "--providers.docker=true"
       - "--providers.docker.exposedbydefault=false"
       - "--entrypoints.websecure.address=:443"
+      - "--entrypoints.web.address=:80"
+      - "--entrypoints.web.http.redirections.entrypoint.to=websecure"
+      - "--entrypoints.web.http.redirections.entrypoint.scheme=https"
       - "--certificatesresolvers.selfhostedservices.acme.tlschallenge=true"
       - "--certificatesresolvers.selfhostedservices.acme.email=${LE_EMAIL_ADDRESS}"
       - "--certificatesresolvers.selfhostedservices.acme.storage=/letsencrypt/acme.json"
     ports:
+      - "80:80"
       - "443:443"
     volumes:
       - "./letsencrypt:/letsencrypt"
       - "/var/run/docker.sock:/var/run/docker.sock:ro"
-      labels:
-        - "traefik.enable=true"
-        - "traefik.http.routers.traefik_dashboard.rule=Host(`${TRAEFIK_HOSTNAME}`) && (PathPrefix(`/api`) || PathPrefix(`/dashboard`))"
-        - "traefik.http.routers.traefik_dashboard.service=api@internal"
-        - "traefik.http.routers.traefik_dashboard.entrypoints=websecure"
-        - "traefik.http.routers.traefik_dashboard.tls.certresolver=selfhostedservices"
   
     heimdall:
       image: linuxserver/heimdall
@@ -218,6 +213,19 @@ services:
       - nextcloud:/var/www/html
     entrypoint: /cron.sh
 
+  privatebin:
+    image: privatebin/nginx-fpm-alpine:latest
+    container_name: privatebin
+    restart: unless-stopped
+    volumes:
+      - privatebin-data:/srv/data
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.privatebin.rule=Host(`${PRIVATEBIN_HOSTNAME}`)"
+      - "traefik.http.services.privatebin.loadbalancer.server.port=8080"
+      - "traefik.http.routers.privatebin.entrypoints=websecure"
+      - "traefik.http.routers.privatebin.tls.certresolver=selfhostedservices"
+
   tor:
     image: goldy/tor-hidden-service:latest
     container_name: tor
@@ -226,6 +234,8 @@ services:
       - monerod
       - nitter
       - teddit
+      - privatebin
+      - whoogle-search
     environment:
       MONEROD_TOR_SERVICE_HOSTS: 18089:monerod:18089
       MONEROD_TOR_SERVICE_VERSION: '3'
@@ -233,6 +243,16 @@ services:
       NITTER_TOR_SERVICE_VERSION: '3'
       TEDDIT_TOR_SERVICE_HOSTS: 80:teddit:8080
       TEDDIT_TOR_SERVICE_VERSION: '3'
+      PASTE_TOR_SERVICE_HOSTS: 80:privatebin:8080
+      PASTE_TOR_SERVICE_VERSION: '3'
+      
+      TOR_ENABLE_VANGUARDS: 'true'
+
+      VANGUARDS_EXTRA_OPTIONS: |
+        [Global]
+        enable_cbtverify = True
+        loglevel = INFO
+
     volumes:
       - tor-keys:/var/lib/tor/hidden_service/
 
@@ -240,8 +260,6 @@ services:
     image: redis:alpine
     container_name: redis
     restart: unless-stopped
-    ports:
-      - "127.0.0.1:6379:6379"
     volumes:
       - redis-data:/var/lib/redis
     healthcheck:
@@ -249,15 +267,6 @@ services:
       interval: 1s
       timeout: 3s
       retries: 30
-
-  autoheal:
-    image: willfarrell/autoheal:latest
-    container_name: autoheal
-    restart: unless-stopped
-    environment:
-      AUTOHEAL_CONTAINER_LABEL: all
-    volumes:
-     - "/var/run/docker.sock:/var/run/docker.sock"
 
   watchtower:
     image: containrrr/watchtower:latest
@@ -275,3 +284,4 @@ volumes:
   wallabag:
   wallabag_db:
   tor-keys:
+  privatebin-data:

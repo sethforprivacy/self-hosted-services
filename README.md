@@ -7,18 +7,20 @@ This repository contains everything you need to start self-hosting a core set of
 * [Git](https://git-scm.com/downloads)
 * [Docker Engine](https://docs.docker.com/engine/install/)
 * [Docker Compose](https://docs.docker.com/compose/install/)
-* Ports `443/tcp`, `18080/tcp`, and `18089/tcp` exposed/forwarded to the host
+* Ports `80/tcp`, `443/tcp`, `18080/tcp`, and `18089/tcp` exposed/forwarded to the host
 * DNS entries for your top-level domain and each desired sub-domain
 
 ## Included Services
 
 * [Nextcloud](https://github.com/nextcloud/server)
   * A self-hosted server for hosting files, photos, backups, contacts, calendars, and much more
-* [Monero](https://github.com/sethsimmons/simple-monerod-docker)
+* [Monero](https://github.com/sethforprivacy/simple-monerod-docker)
   * A self-sovereign, private-by-default, digital cash
   * This service runs a pruned Monero node, allowing you to connect your own Monero wallet(s) directly to your own node
 * [Nitter](https://github.com/zedeus/nitter)
   * A privacy-preserving Twitter front-end
+* [PrivateBin](https://privatebin.info/)
+  * A privacy-preserving and encrypted-by-default pastebin
 * [Teddit](https://codeberg.org/teddit/teddit)
   * A privacy-preserving Reddit front-end
 * [Wallabag](https://github.com/wallabag/wallabag)
@@ -37,7 +39,7 @@ This repo relies on Docker Compose to configure and run all of the above service
 You will need to clone this repository to the host you want running these services first:
 
 ```bash
-git clone https://github.com/sethsimmons/self-hosted-services.git
+git clone https://github.com/sethforprivacy/self-hosted-services.git
 cd self-hosted-services
 ```
 
@@ -69,6 +71,9 @@ TRAEFIK_HOSTNAME=traefik.mydomain.com
 DASHBOARD_HOSTNAME=dashboard.mydomain.com
 DASHBOARD_TZ=America/New York
 
+# Privatebin Variables
+PRIVATEBIN_HOSTNAME=paste.mydomain.com
+
 # Let's Encrypt Variables
 LE_EMAIL_ADDRESS=myemail@pm.me
 ```
@@ -90,11 +95,9 @@ Currently only Monero, Nitter, and Teddit get default Tor support, but I will li
 
 * `docker exec -ti tor onions`
 
-## Auto-healing and Updates
+## Updates
 
-Each service included has a rudimentary health-check configured to allow [docker-autoheal](https://github.com/willfarrell/docker-autoheal) to restart any services that may fail.
-
-Automatic updates are provided by the [Watchtower](https://containrrr.dev/watchtower/) container that watches and updates base images of services when available.
+Automatic updates are provided by the [Watchtower](https://containrrr.dev/watchtower/) container that watches and updates base images of services when available. It will automatically search for, download, and migrate your services to updated images whenever available.
 
 ## Logging
 
@@ -121,8 +124,9 @@ docker-compose logs --follow monerod
 As this simply helps you get these services running, using each service is outside of the scope of this project. However, below are some links for getting started with each:
 
 * [Nextcloud](https://docs.nextcloud.com/server/21/user_manual/en/)
-* [Monero](https://sethforprivacy.com/guides/run-a-monero-node/#sending-commands-to-your-node)
+* [Monero](https://blog.sethforprivacy.com/guides/run-a-monero-node/#sending-commands-to-your-node)
 * [Nitter](https://nitter.net/about)
+* [PrivateBin](https://privatebin.info/)
 * [Teddit](https://codeberg.org/teddit/teddit)
 * [Wallabag](https://www.wallabag.it/en/features)
 
@@ -138,9 +142,9 @@ If you decide to run this and use these services, please don't forget to donate 
 
 ## Potential Future Services
 
-* [Yotter](https://github.com/ytorg/yotter)
-  * A privacy-preserving YouTube and Twitter front-end
-* [Plex](https://docs.linuxserver.io/images/docker-plex)
+* [Piped](https://github.com/TeamPiped/Piped)
+  * A privacy-preserving YouTube front-end
+* [Jellyfin](https://jellyfin.org/)
   * A self-hosted media server
 
 ## Additional Resources
@@ -153,5 +157,3 @@ If you decide to run this and use these services, please don't forget to donate 
   * This Docker container makes it incredibly easy to expose Tor Hidden Services of other running containers
 * https://github.com/containrrr/watchtower
   * Watchtower automates updating base images for other running containers
-* https://github.com/willfarrell/docker-autoheal
-  * Utilizes Docker-Compose healthchecks to restart containers that fail their healthcheck for any reason
