@@ -21,7 +21,7 @@ services:
       - "./letsencrypt:/letsencrypt"
       - "/var/run/docker.sock:/var/run/docker.sock:ro"
   
-    heimdall:
+   heimdall:
       image: linuxserver/heimdall
       container_name: heimdall
       restart: unless-stopped
@@ -30,8 +30,7 @@ services:
       environment:
         - PUID=1000
         - PGID=1000
-        - TZ=${HEIMDALL_TZ}
-      restart: unless-stopped
+        - TZ=${DASHBOARD_TZ}
       healthcheck:
         test: ["CMD", "wget" ,"--no-verbose", "--tries=1", "--spider", "http://localhost"]
         interval: 1m
