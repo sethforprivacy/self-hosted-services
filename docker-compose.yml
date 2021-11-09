@@ -5,6 +5,7 @@ services:
     container_name: "traefik"
     restart: unless-stopped
     command:
+    
       - "--providers.docker=true"
       - "--providers.docker.exposedbydefault=false"
       - "--entrypoints.websecure.address=:443"
@@ -21,26 +22,253 @@ services:
       - "./letsencrypt:/letsencrypt"
       - "/var/run/docker.sock:/var/run/docker.sock:ro"
   
-   heimdall:
-      image: linuxserver/heimdall
-      container_name: heimdall
-      restart: unless-stopped
-      volumes:
-        - heimdall:/config
-      environment:
-        - PUID=1000
-        - PGID=1000
-        - TZ=${DASHBOARD_TZ}
-      healthcheck:
-        test: ["CMD", "wget" ,"--no-verbose", "--tries=1", "--spider", "http://localhost"]
-        interval: 1m
-        timeout: 3s
-      labels:
-        - "traefik.enable=true"
-        - "traefik.http.routers.dashboard.rule=Host(`${DASHBOARD_HOSTNAME}`)"
-        - "traefik.http.services.dashboard.loadbalancer.server.port=80"
-        - "traefik.http.routers.dashboard.entrypoints=websecure"
-        - "traefik.http.routers.dashboard.tls.certresolver=selfhostedservices"
+  uptime-kuma:
+    image: louislam/uptime-kuma:1
+    container_name: uptime-kuma
+    restart: always
+    volumes:
+      - uptime-kuma:/app/data
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.status.rule=Host(`${STATUS_HOSTNAME}`)"
+      - "traefik.http.routers.status.entrypoints=websecure"
+      - "traefik.http.routers.status.tls.certresolver=selfhostedservices"
+
+  libretranslate:
+    image: libretranslate/libretranslate:latest
+    restart: unless-stopped
+    container_name: libretranslate
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.translate.rule=Host(`${TRANSLATE_HOSTNAME}`)"
+      - "traefik.http.routers.translate.entrypoints=websecure"
+      - "traefik.http.routers.translate.tls.certresolver=selfhostedservices"
+      - "traefik.http.services.translate.loadbalancer.server.port=5000"
+
+  bitwarden:
+    image: vaultwarden/server:latest
+    container_name: bitwarden
+    restart: unless-stopped
+    volumes:
+       - bitwarden-data:/data
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.bitwarden.entrypoints=websecure"
+      - "traefik.http.routers.bitwarden.rule=Host(`${BITWARDEN_HOSTNAME}`)"
+      - "traefik.http.routers.bitwarden.tls.certresolver=selfhostedservices"
+
+  db:
+    image: mysql:5.7
+    volumes:
+      - db_data:/var/lib/mysql
+    restart: always
+    environment:
+      MYSQL_ROOT_PASSWORD: ${WP_MYSQL_ROOT_PW}
+      MYSQL_DATABASE: wordpress
+      MYSQL_USER: wordpress
+      MYSQL_PASSWORD: ${WP_MYSQL_PW}
+    
+  wordpress:
+    depends_on:
+      - db
+    image: wordpress:latest
+    volumes:
+      - wordpress_data:/var/www/html
+    restart: always
+    environment:
+      WORDPRESS_DB_HOST: db:3306
+      WORDPRESS_DB_USER: wordpress
+      WORDPRESS_DB_PASSWORD: ${WP_DB_PW}
+      WORDPRESS_DB_NAME: wordpress
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.blog.rule=Host(`${WORDPRESS_HOSTNAME}`)"
+      - "traefik.http.routers.blog.entrypoints=websecure"
+      - "traefik.http.routers.blog.tls.certresolver=selfhostedservices"
+
+  filtron:
+    container_name: filtron
+    image: dalf/filtron
+    restart: always
+    ports:
+      - "127.0.0.1:4041:4041"
+    command: -listen 0.0.0.0:4040 -api 0.0.0.0:4041 -target searx:8080
+    volumes:
+      - ./rules.json:/etc/filtron/rules.json:rw
+    logging:
+      driver: none
+    read_only: true
+    cap_drop:
+      - ALL
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.filtron.rule=Host(`${SEARX_HOSTNAME}`)"
+      - "traefik.http.routers.filtron.tls.certresolver=selfhostedservices"
+      - "traefik.http.routers.filtron.entrypoints=websecure"
+      - "traefik.http.services.filtron.loadbalancer.server.port=4040"
+ 
+  searx:
+    container_name: searx
+    image: searxng/searxng:latest
+    restart: always
+    command: ${SEARX_COMMAND:-}
+    volumes:
+      - ./settings.yml:/etc/searxng/settings.yml:rw
+    logging:
+      driver: none
+    environment:
+      - BIND_ADDRESS=0.0.0.0:8080
+      - BASE_URL=https://${SEARX_HOSTNAME}/
+      - MORTY_URL=https://${SEARX_HOSTNAME}/morty/
+      - MORTY_KEY=${MORTY_KEY}
+    cap_drop:
+      - ALL
+    cap_add:
+      - CHOWN
+      - SETGID
+      - SETUID
+      - DAC_OVERRIDE
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.searx.rule=Host(`${SEARX_HOSTNAME}`)"
+      - "traefik.http.routers.searx.tls.certresolver=selfhostedservices"
+      - "traefik.http.routers.searx.entrypoints=websecure"
+      - "traefik.http.services.searx.loadbalancer.server.port=8080"
+
+  morty:
+    container_name: morty
+    image: dalf/morty
+    restart: always
+    command: -timeout 6 -ipv6
+    environment:
+      - MORTY_KEY=${MORTY_KEY}
+      - MORTY_ADDRESS=0.0.0.0:3030
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.morty.rule=Host(`${SEARX_HOSTNAME}`) && PathPrefix(`/morty`)"
+      - "traefik.http.routers.morty.tls.certresolver=selfhostedservices"
+      - "traefik.http.routers.morty.entrypoints=websecure"
+      - "traefik.http.services.morty.loadbalancer.server.port=3030"      
+
+  cryptpad:
+    image: promasu/cryptpad:nginx
+    container_name: cryptpad
+    restart: unless-stopped
+    environment:
+      - CPAD_MAIN_DOMAIN=${PAD_HOSTNAME}
+      - CPAD_SANDBOX_DOMAIN=${PAD_HOSTNAME}/sandbox
+      # Traefik can't use HTTP2 to communicate with cryptpat_websocket
+      # A workaroung is disabling HTTP2 in Nginx
+      - CPAD_HTTP2_DISABLE=true
+
+    ulimits:
+      nofile:
+        soft: 1000000
+        hard: 1000000
+
+    volumes:
+      - cryptpad-blob:/cryptpad/blob
+      - cryptpad-block:/cryptpad/block
+      - cryptpad-customize:/cryptpad/customize
+      - cryptpad-data:/cryptpad/data
+      - cryptpad-datastores:/cryptpad/datastore
+      - ./data/config.js:/cryptpad/config/config.js
+
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.pad.rule=Host(`${PAD_HOSTNAME}`)"
+      - "traefik.http.routers.pad.entrypoints=websecure"
+      - "traefik.http.routers.pad.tls.certresolver=selfhostedservices"
+
+  monerod:
+    image: sethsimmons/simple-monerod:latest
+    restart: unless-stopped
+    container_name: monerod
+    volumes:
+      - bitmonero:/home/monero
+    ports:
+      - 18080:18080
+      - 18089:18089
+      - 18083:18083
+    command: >-
+      --rpc-restricted-bind-ip=0.0.0.0
+      --rpc-restricted-bind-port=18089
+      --public-node
+      --no-igd
+      --enable-dns-blocklist
+      --prune-blockchain
+      --zmq-pub=tcp://0.0.0.0:18083
+
+  p2pool:
+    image: sethsimmons/p2pool:latest
+    restart: unless-stopped
+    container_name: p2pool
+    tty: true
+    stdin_open: true
+    volumes:
+      - p2pool-data:/home/p2pool
+      - /dev/hugepages:/dev/hugepages:rw
+    ports:
+      - 3333:3333
+      - 37889:37889
+    command: >-
+      --wallet "${YOUR_WALLET_ADDRESS}"
+      --stratum 0.0.0.0:3333
+      --p2p 0.0.0.0:37889
+      --loglevel 0
+      --addpeers 65.21.227.114:37889,node.sethforprivacy.com:37889
+      --host monerod
+      --rpc-port 18089
+
+  postgres:
+    image: postgres:10
+    restart: always
+    volumes:
+      - postgresdata:/var/lib/postgresql/data
+      - ./config/sql:/config/sql
+      - ./docker/init-invidious-db.sh:/docker-entrypoint-initdb.d/init-invidious-db.sh
+    environment:
+      POSTGRES_DB: invidious
+      POSTGRES_USER: kemal
+      POSTGRES_PASSWORD: kemal
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U $$POSTGRES_USER -d $$POSTGRES_DB"]
+  invidious:
+    image: quay.io/invidious/invidious:latest
+    restart: always
+    mem_limit: 1024M
+    cpus: 0.5
+    environment:
+      # Adapted from ./config/config.yml
+      INVIDIOUS_CONFIG: |
+        channel_threads: 1
+        check_tables: true
+        feed_threads: 1
+        db:
+          user: kemal
+          password: kemal
+          host: postgres
+          port: 5432
+          dbname: invidious
+        full_refresh: false
+        https_only: false
+        domain: 
+    depends_on:
+      - postgres
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.invidious.rule=Host(`${INVIDIOUS_HOSTNAME}`)"
+      - "traefik.http.routers.invidious.entrypoints=websecure"
+      - "traefik.http.routers.invidious.tls.certresolver=selfhostedservices"
+      - "traefik.http.services.invidious.loadbalancer.server.port=3000"
+  autoheal:
+    restart: always
+    image: willfarrell/autoheal
+    environment:
+      - AUTOHEAL_CONTAINER_LABEL=all
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock
+
 
   wallabag:
     image: wallabag/wallabag:latest
@@ -89,23 +317,6 @@ services:
       interval: 1s
       timeout: 3s
       retries: 30
-
-  monerod:
-    image: sethsimmons/simple-monerod:latest
-    restart: unless-stopped
-    container_name: monerod
-    volumes:
-      - bitmonero:/home/monero
-    ports:
-      - 18080:18080
-      - 18089:18089
-    command:
-      - "--rpc-restricted-bind-ip=0.0.0.0"
-      - "--rpc-restricted-bind-port=18089"
-      - "--public-node"
-      - "--no-igd"
-      - "--enable-dns-blocklist"
-      - "--prune-blockchain"
 
   nitter:
     volumes:
@@ -225,6 +436,34 @@ services:
       - "traefik.http.routers.privatebin.entrypoints=websecure"
       - "traefik.http.routers.privatebin.tls.certresolver=selfhostedservices"
 
+  redis:
+    image: redis:6-alpine
+    hostname: redis
+    volumes:
+      - send_redis-data:/data
+
+  send:
+    image: registry.gitlab.com/timvisee/send:latest
+    container_name: send
+    restart: unless-stopped
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.send.rule=Host(`${SEND_HOSTNAME}`)"
+      - "traefik.http.routers.send.entrypoints=websecure"
+      - "traefik.http.routers.send.tls.certresolver=selfhostedservices"
+      - "traefik.http.services.send.loadbalancer.server.port=1443"
+
+    environment:
+      - NODE_ENV=production
+      # Networking
+      - VIRTUAL_HOST=${SEND_HOSTNAME}
+      - VIRTUAL_PORT=443
+      - BASE_URL=https://${SEND_HOSTNAME}
+      # Redis
+      - REDIS_HOST=redis
+      # Storage Limit
+      - MAX_FILE_SIZE=2147483648
+
   tor:
     image: goldy/tor-hidden-service:latest
     container_name: tor
@@ -234,6 +473,13 @@ services:
       - nitter
       - teddit
       - privatebin
+      - uptime-kuma
+      - libretranslate
+      - searx
+      - cryptpad
+      - invidious
+      - p2pool
+      
     environment:
       MONEROD_TOR_SERVICE_HOSTS: 18089:monerod:18089
       MONEROD_TOR_SERVICE_VERSION: '3'
@@ -241,8 +487,15 @@ services:
       NITTER_TOR_SERVICE_VERSION: '3'
       TEDDIT_TOR_SERVICE_HOSTS: 80:teddit:8080
       TEDDIT_TOR_SERVICE_VERSION: '3'
-      PASTE_TOR_SERVICE_HOSTS: 80:privatebin:8080
-      PASTE_TOR_SERVICE_VERSION: '3'
+      LIBRETRANSLATE_TOR_SERVICE_HOSTS: 80:LIBRETRANSLATE:5000
+      LIBRETRANSLATE_TOR_SERVICE_VERSION: '3'
+      SEARX_TOR_SERVICE_HOSTS: 80:SEARX:8080
+      SEARX_TOR_SERVICE_VERSION: '3'
+      P2POOL_TOR_SERVICE_HOSTS: 80:P2POOL:3333
+      P2POOL_TOR_SERVICE_VERSION: '3'
+      INVIDIOUS_TOR_SERVICE_HOSTS: 80:INVIDIOUS:3000
+      INVIDIOUS_TOR_SERVICE_VERSION: '3'
+      
       
       TOR_ENABLE_VANGUARDS: 'true'
 
@@ -250,7 +503,6 @@ services:
         [Global]
         enable_cbtverify = True
         loglevel = INFO
-
     volumes:
       - tor-keys:/var/lib/tor/hidden_service/
 
@@ -275,7 +527,6 @@ services:
 
 volumes:
   bitmonero:
-  heimdall:
   redis-data:
   nextcloud:
   nextcloud_db:
@@ -283,3 +534,16 @@ volumes:
   wallabag_db:
   tor-keys:
   privatebin-data:
+  uptime-kuma:
+  p2pool-data:
+  postgresdata:
+  db_data:
+  wordpress_data:
+  cryptpad-blob:
+  cryptpad-block:
+  cryptpad-customize:
+  cryptpad-data:
+  cryptpad-datastores:
+  send_redis-data:
+  bitwarden-data:
+  data-redis:
