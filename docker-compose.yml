@@ -21,7 +21,7 @@ services:
       - "./letsencrypt:/letsencrypt"
       - "/var/run/docker.sock:/var/run/docker.sock:ro"
   
-   heimdall:
+  heimdall:
       image: linuxserver/heimdall
       container_name: heimdall
       restart: unless-stopped
@@ -121,13 +121,16 @@ services:
     ports:
       - 3333:3333
       - 37889:37889
-    command: >-
-      --wallet "$(YOUR_WALLET_ADRESS)"
-      --stratum "0.0.0.0:3333" --p2p "0.0.0.0:37889" 
-      --loglevel "0" --addpeers "65.21.227.114:37889,node.sethforprivacy.com:37889"
-      --host "monerod" --rpc-port "18089"
+    command:
+      - "--wallet $(YOUR_WALLET_ADRESS)"
+      - "--stratum 0.0.0.0:3333"
+      - "--p2p 0.0.0.0:37889"
+      - "--loglevel 0"
+      - "--addpeers 65.21.227.114:37889,node.sethforprivacy.com:37889"
+      - "--host monerod"
+      - "--rpc-port "18089"
 
-postgres:
+  postgres:
     image: postgres:10
     restart: always
     volumes:
@@ -197,7 +200,7 @@ postgres:
       - "traefik.http.routers.translate.tls.certresolver=selfhostedservices"
       
   cryptpad:
-    image; promasu/cryptpad
+    image: promasu/cryptpad
     restart: always
     container_name: cryptpad
     ports:
@@ -500,3 +503,5 @@ volumes:
   postgresdata:
   caddy-config:
   caddy-data:
+  
+
