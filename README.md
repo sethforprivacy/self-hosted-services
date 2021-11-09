@@ -86,7 +86,7 @@ Edit the Nitter configuration file:
   * Replace the `hostname`, `replaceTwitter`, and `replaceYouTube` values with the relevant hostnames
 
 * Searx
-  * Generate MORTY_KEY sed -i "s|ReplaceWithARealKey\!|$(openssl rand -base64 33)|g" .env
+  * Generate MORTY_KEY `sed -i "s|ReplaceWithARealKey\!|$(openssl rand -base64 33)|g" .env`
 
 Start-up the services with Docker Compose:
 
