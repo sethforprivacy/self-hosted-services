@@ -99,6 +99,7 @@ services:
     ports:
       - 18080:18080
       - 18089:18089
+      - 18083:18083
     command:
       - "--rpc-restricted-bind-ip=0.0.0.0"
       - "--rpc-restricted-bind-port=18089"
@@ -106,7 +107,108 @@ services:
       - "--no-igd"
       - "--enable-dns-blocklist"
       - "--prune-blockchain"
+      - "--zmq-pub=tcp://0.0.0.0:18083"
 
+  p2pool:
+    image: sethsimmons/p2pool:latest
+    restart: unless-stopped
+    container_name: p2pool
+    tty: true
+    stdin_open: true
+    volumes:
+      - p2pool-data:/home/p2pool
+      - /dev/hugepages:/dev/hugepages:rw
+    ports:
+      - 3333:3333
+      - 37889:37889
+    command: >-
+      --wallet "$(YOUR_WALLET_ADRESS)"
+      --stratum "0.0.0.0:3333" --p2p "0.0.0.0:37889" 
+      --loglevel "0" --addpeers "65.21.227.114:37889,node.sethforprivacy.com:37889"
+      --host "monerod" --rpc-port "18089"
+
+postgres:
+    image: postgres:10
+    restart: always
+    volumes:
+      - postgresdata:/var/lib/postgresql/data
+      - ./config/sql:/config/sql
+      - ./docker/init-invidious-db.sh:/docker-entrypoint-initdb.d/init-invidious-db.sh
+    environment:
+      POSTGRES_DB: invidious
+      POSTGRES_USER: kemal
+      POSTGRES_PASSWORD: kemal
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U $$POSTGRES_USER -d $$POSTGRES_DB"]
+  invidious:
+    image: quay.io/invidious/invidious:latest
+    restart: always
+    mem_limit: 1024M
+    cpus: 0.5
+    ports:
+      - 3030:3000
+    environment:
+      INVIDIOUS_CONFIG: |
+        channel_threads: 1
+        check_tables: true
+        feed_threads: 1
+        db:
+          dbname: invidious
+          user: kemal
+          password: kemal
+          host: postgres
+          port: 5432
+        full_refresh: false
+        https_only: true
+        domain: $(INVIDIOUS_HOSTNAME)
+        external_port: 443
+    healthcheck:
+      test: wget -nv --tries=1 --spider http://127.0.0.1:3000/api/v1/comments/jNQXAC9IVRw || exit 1
+      interval: 30s
+      timeout: 5s
+      retries: 2
+    depends_on:
+      - postgres
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.invidious.rule=Host(`${INVIDIOUS_HOSTNAME}`)"
+      - "traefik.http.services.invidious.loadbalancer.server.port=8080"
+      - "traefik.http.routers.invidious.entrypoints=websecure"
+      - "traefik.http.routers.invidious.tls.certresolver=selfhostedservices"
+  autoheal:
+    restart: always
+    image: willfarrell/autoheal
+    environment:
+      - AUTOHEAL_CONTAINER_LABEL=all
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock
+
+  libretranslate:
+    image: libretranslate/libretranslate
+    restart: always
+    container_name: libretranslate
+    ports:
+      - 5000:5000
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.translate.rule=Host(`${TRANSLATE_HOSTNAME}`)"
+      - "traefik.http.services.translate.loadbalancer.server.port=8080"
+      - "traefik.http.routers.translate.entrypoints=websecure"
+      - "traefik.http.routers.translate.tls.certresolver=selfhostedservices"
+      
+  cryptpad:
+    image; promasu/cryptpad
+    restart: always
+    container_name: cryptpad
+    ports:
+      - 3008:3000
+      - 3009:3001
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.pad.rule=Host(`${PAD_HOSTNAME}`)"
+      - "traefik.http.services.pad.loadbalancer.server.port=8080"
+      - "traefik.http.routers.pad.entrypoints=websecure"
+      - "traefik.http.routers.pad.tls.certresolver=selfhostedservices"  
   nitter:
     volumes:
         - ./nitter.conf:/src/nitter.conf
@@ -211,7 +313,19 @@ services:
     volumes:
       - nextcloud:/var/www/html
     entrypoint: /cron.sh
-
+  uptime-kuma:
+    image: louislam/uptime-kuma:1
+    container_name: uptime-kuma
+    restart: always
+    ports:
+      - 3001:3001
+    volumes:
+      - uptime-kuma:/app/data
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.uptime-kuma.rule=Host(`${UPTIME-KUMA_HOSTNAME}`)"
+      - "traefik.http.routers.uptime-kuma.entrypoints=websecure"
+      - "traefik.http.routers.uptime-kuma.tls.certresolver=selfhostedservices"
   privatebin:
     image: privatebin/nginx-fpm-alpine:latest
     container_name: privatebin
@@ -224,25 +338,120 @@ services:
       - "traefik.http.services.privatebin.loadbalancer.server.port=8080"
       - "traefik.http.routers.privatebin.entrypoints=websecure"
       - "traefik.http.routers.privatebin.tls.certresolver=selfhostedservices"
+  
+  portainer:
+    image: 
+    container_name: portainer
+    restart: always
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.privatebin.rule=Host(`${PORTAINER_HOSTNAME}`)"
+      - "traefik.http.routers.privatebin.entrypoints=websecure"
+      - "traefik.http.routers.privatebin.tls.certresolver=selfhostedservices"
+    ports:
+      - 8000:8000
+      - 9000:9000
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock
+      - portainer_data:/data portainer/portainer-ce
+  
+  caddy:
+    container_name: caddy
+    image: caddy:2-alpine
+    restart: on-failure
+    network_mode: host
+    volumes:
+      - ./Caddyfile:/etc/caddy/Caddyfile:ro
+      - caddy-data:/data:rw
+      - caddy-config:/config:rw
+    environment:
+      - SEARX_HOSTNAME=${SEARX_HOSTNAME:-localhost}
+      - SEARX_TLS=${LETSENCRYPT_EMAIL:-internal}
+    cap_drop:
+      - ALL
+    cap_add:
+      - NET_BIND_SERVICE
+      - DAC_OVERRIDE
 
+  filtron:
+    container_name: filtron
+    image: dalf/filtron
+    restart: always
+    ports:
+      - "127.0.0.1:4040:4040"
+      - "127.0.0.1:4041:4041"
+    command: -listen 0.0.0.0:4040 -api 0.0.0.0:4041 -target searx:8080
+    volumes:
+      - ./rules.json:/etc/filtron/rules.json:rw
+    read_only: true
+    cap_drop:
+      - ALL
+
+  searx:
+    container_name: searx
+    image: searx/searx:latest
+    restart: always
+    command: ${SEARX_COMMAND:-}
+    volumes:
+      - .a/searx:/etc/searx:rw
+      - ./settings.yml:/etc/searx/settings.yml
+    environment:
+      - BIND_ADDRESS=0.0.0.0:8080
+      - BASE_URL=https://${SEARX_HOSTNAME:-localhost}/
+      - MORTY_URL=https://${SEARX_HOSTNAME:-localhost}/morty/
+      - MORTY_KEY=${MORTY_KEY}
+    cap_drop:
+      - ALL
+    cap_add:
+      - CHOWN
+      - SETGID
+      - SETUID
+      - DAC_OVERRIDE
+
+  morty:
+    container_name: morty
+    image: dalf/morty
+    restart: always
+    ports:
+      - "127.0.0.1:3000:3000"
+    command: -timeout 6 -ipv6
+    environment:
+      - MORTY_KEY=${MORTY_KEY}
+      - MORTY_ADDRESS=0.0.0.0:3000
+    logging:
+      driver: none
+    read_only: true
+    cap_drop:
+      - ALL
+  
   tor:
     image: goldy/tor-hidden-service:latest
     container_name: tor
     restart: unless-stopped
     links:
       - monerod
+      - p2pool
       - nitter
       - teddit
       - privatebin
+      - uptime-kuma
     environment:
       MONEROD_TOR_SERVICE_HOSTS: 18089:monerod:18089
       MONEROD_TOR_SERVICE_VERSION: '3'
+      P2POOL_TOR_SERVICE_HOSTS: 3333:p2pool:3333
+      P2POOL_TOR_SERVICE_VERSION: '3'
       NITTER_TOR_SERVICE_HOSTS: 80:nitter:8080
       NITTER_TOR_SERVICE_VERSION: '3'
       TEDDIT_TOR_SERVICE_HOSTS: 80:teddit:8080
       TEDDIT_TOR_SERVICE_VERSION: '3'
       PASTE_TOR_SERVICE_HOSTS: 80:privatebin:8080
       PASTE_TOR_SERVICE_VERSION: '3'
+      UPTIME-KUMA_TOR_SERVICE_HOSTS: 3991:uptime-kuma:3001
+      UPTIME-KUMA_TOR_SERVICE_VERSION: '3'
+      WIKILESS_TOR_SERVICE_HOSTS: 80:wikiless:8080
+      WIKILESS_TOR_SERVICE_VERSION: '3'
+      PORTAINER_TOR_SERVICE_HOSTS: 80:portainer:8080
+      PORTAINER_TOR_SERVICE_VERSION: '3'
       
       TOR_ENABLE_VANGUARDS: 'true'
 
@@ -270,6 +479,8 @@ services:
     image: containrrr/watchtower:latest
     container_name: watchtower
     restart: unless-stopped
+    environment:
+      - WATCHTOWER_CLEANUP=TRUE
     volumes:
       - "/var/run/docker.sock:/var/run/docker.sock"
 
@@ -283,3 +494,9 @@ volumes:
   wallabag_db:
   tor-keys:
   privatebin-data:
+  p2pool-data:
+  uptime-kuma:
+  portainer_data:
+  postgresdata:
+  caddy-config:
+  caddy-data:
