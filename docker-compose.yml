@@ -122,13 +122,13 @@ services:
       - 3333:3333
       - 37889:37889
     command:
-      - "--wallet $(YOUR_WALLET_ADRESS)"
+      - "--wallet "
       - "--stratum 0.0.0.0:3333"
       - "--p2p 0.0.0.0:37889"
       - "--loglevel 0"
       - "--addpeers 65.21.227.114:37889,node.sethforprivacy.com:37889"
       - "--host monerod"
-      - "--rpc-port "18089"
+      - "--rpc-port 18089"
 
   postgres:
     image: postgres:10
@@ -151,25 +151,20 @@ services:
     ports:
       - 3030:3000
     environment:
+      # Adapted from ./config/config.yml
       INVIDIOUS_CONFIG: |
         channel_threads: 1
         check_tables: true
         feed_threads: 1
         db:
-          dbname: invidious
           user: kemal
           password: kemal
           host: postgres
           port: 5432
+          dbname: invidious
         full_refresh: false
-        https_only: true
-        domain: $(INVIDIOUS_HOSTNAME)
-        external_port: 443
-    healthcheck:
-      test: wget -nv --tries=1 --spider http://127.0.0.1:3000/api/v1/comments/jNQXAC9IVRw || exit 1
-      interval: 30s
-      timeout: 5s
-      retries: 2
+        https_only: false
+        domain: $(SEARX_HOSTNAME)
     depends_on:
       - postgres
     labels:
