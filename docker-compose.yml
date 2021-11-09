@@ -122,7 +122,7 @@ services:
       - 3333:3333
       - 37889:37889
     command:
-      - "--wallet $(YOUR_WALLET_ADDRESS)"
+      - "--wallet "
       - "--stratum 0.0.0.0:3333"
       - "--p2p 0.0.0.0:37889"
       - "--loglevel 0"
@@ -164,7 +164,7 @@ services:
           dbname: invidious
         full_refresh: false
         https_only: false
-        domain: $(SEARX_HOSTNAME)
+        domain: 
     depends_on:
       - postgres
     labels:
@@ -185,8 +185,6 @@ services:
     image: libretranslate/libretranslate
     restart: always
     container_name: libretranslate
-    ports:
-      - 5000:5000
     labels:
       - "traefik.enable=true"
       - "traefik.http.routers.translate.rule=Host(`${TRANSLATE_HOSTNAME}`)"
@@ -198,9 +196,6 @@ services:
     image: promasu/cryptpad
     restart: always
     container_name: cryptpad
-    ports:
-      - 3008:3000
-      - 3009:3001
     labels:
       - "traefik.enable=true"
       - "traefik.http.routers.pad.rule=Host(`${PAD_HOSTNAME}`)"
@@ -315,8 +310,6 @@ services:
     image: louislam/uptime-kuma:1
     container_name: uptime-kuma
     restart: always
-    ports:
-      - 3001:3001
     volumes:
       - uptime-kuma:/app/data
     labels:
@@ -338,26 +331,22 @@ services:
       - "traefik.http.routers.privatebin.tls.certresolver=selfhostedservices"
   
   portainer:
-    image: 
+    image: portainer/portainer-ce
     container_name: portainer
     restart: always
     labels:
       - "traefik.enable=true"
-      - "traefik.http.routers.privatebin.rule=Host(`${PORTAINER_HOSTNAME}`)"
-      - "traefik.http.routers.privatebin.entrypoints=websecure"
-      - "traefik.http.routers.privatebin.tls.certresolver=selfhostedservices"
-    ports:
-      - 8000:8000
-      - 9000:9000
+      - "traefik.http.routers.portainer.rule=Host(`${PORTAINER_HOSTNAME}`)"
+      - "traefik.http.routers.portainer.entrypoints=websecure"
+      - "traefik.http.routers.portainer.tls.certresolver=selfhostedservices"
     volumes:
       - /var/run/docker.sock:/var/run/docker.sock
-      - portainer_data:/data portainer/portainer-ce
+      - portainer_data:/data
   
   caddy:
     container_name: caddy
     image: caddy:2-alpine
     restart: on-failure
-    network_mode: host
     volumes:
       - ./Caddyfile:/etc/caddy/Caddyfile:ro
       - caddy-data:/data:rw
@@ -394,7 +383,6 @@ services:
       - .a/searx:/etc/searx:rw
       - ./settings.yml:/etc/searx/settings.yml
     environment:
-      - BIND_ADDRESS=0.0.0.0:8080
       - BASE_URL=https://${SEARX_HOSTNAME:-localhost}/
       - MORTY_URL=https://${SEARX_HOSTNAME:-localhost}/morty/
       - MORTY_KEY=${MORTY_KEY}
