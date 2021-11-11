@@ -57,11 +57,11 @@ git clone https://github.com/sethforprivacy/self-hosted-services.git
 cd self-hosted-services
 ```
 
-Once cloned, set the necessary passwords and desired sub-domains in the `.env` file (*PLEASE DO NOT COPY THE FOLLOWING CONFIG, CHANGE THE PASSWORDS AND HOSTNAMES APPROPRIATELY IN YOUR LOCAL `.env` FILE*):
+Once cloned, set the necessary passwords and desired sub-domains in the `.env` file (*PLEASE DO NOT COPY THE FOLLOWING CONFIG, CHANGE THE PASSWORDS AND HOSTNAMES APPROPRIATELY IN YOUR LOCAL `.env` FILE*)
 
-ALSO:
+VERY IMPORTANT:
 
-Edit the docker-compose.yml file and paste your Monero address in the p2pool service under "wallet" like this: `wallet YOUR_WALLET_ADDRESS HERE`
+Edit the `docker-compose.yml` file and paste your Monero address in the p2pool service under "wallet" like this: `wallet YOUR_WALLET_ADDRESS HERE`
 
 You also need to add your invidious subdomain in the docker-compose.yml file. Currently under `domain` it is blank
 
