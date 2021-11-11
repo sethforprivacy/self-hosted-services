@@ -212,7 +212,7 @@ services:
           dbname: invidious
         full_refresh: false
         https_only: false
-        domain: invidious.valduna.at
+        domain:
     depends_on:
       - postgres
     labels:
