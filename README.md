@@ -7,7 +7,7 @@ This repository contains everything you need to start self-hosting a core set of
 * [Git](https://git-scm.com/downloads)
 * [Docker Engine](https://docs.docker.com/engine/install/)
 * [Docker Compose](https://docs.docker.com/compose/install/)
-* Ports `80/tcp`, `443/tcp`, `18080/tcp`, and `18089/tcp` exposed/forwarded to the host
+* Ports `80/tcp`, `443/tcp`, `18080/tcp`, `18083/tcp`, `3333/tcp`, `37889/tcp`, and `18089/tcp` exposed/forwarded to the host
 * DNS entries for your top-level domain and each desired sub-domain
 
 ## Included Services
