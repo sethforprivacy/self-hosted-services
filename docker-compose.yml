@@ -33,27 +33,10 @@ services:
       - "traefik.http.routers.status.entrypoints=websecure"
       - "traefik.http.routers.status.tls.certresolver=selfhostedservices"
 
-  portainer:
-    image: portainer/portainer-ce
-    container_name: portainer
-    restart: always
-    labels:
-      - "traefik.enable=true"
-      - "traefik.http.routers.portainer.rule=Host(`${PORTAINER_HOSTNAME}`)"
-      - "traefik.http.routers.portainer.entrypoints=websecure"
-      - "traefik.http.routers.portainer.tls.certresolver=selfhostedservices"
-
-    volumes:
-      - /var/run/docker.sock:/var/run/docker.sock
-      - portainer_data:/data
-  
-
   libretranslate:
     image: libretranslate/libretranslate:latest
     restart: unless-stopped
     container_name: libretranslate
-    environment:
-      - LT_LOAD_ONLY=de,en
     ports:
       - 5000:5000
     labels:
@@ -61,6 +44,37 @@ services:
       - "traefik.http.routers.translate.rule=Host(`${TRANSLATE_HOSTNAME}`)"
       - "traefik.http.routers.translate.entrypoints=websecure"
       - "traefik.http.routers.translate.tls.certresolver=selfhostedservices"
+
+  db:
+    image: mysql:5.7
+    volumes:
+      - db_data:/var/lib/mysql
+    restart: always
+    environment:
+      MYSQL_ROOT_PASSWORD: ${WP_MYSQL_ROOT_PW}
+      MYSQL_DATABASE: wordpress
+      MYSQL_USER: wordpress
+      MYSQL_PASSWORD: ${WP_MYSQL_PW}
+    
+  wordpress:
+    depends_on:
+      - db
+    image: wordpress:latest
+    volumes:
+      - wordpress_data:/var/www/html
+    ports:
+      - "8000:80"
+    restart: always
+    environment:
+      WORDPRESS_DB_HOST: db:3306
+      WORDPRESS_DB_USER: wordpress
+      WORDPRESS_DB_PASSWORD: ${WP_DB_PW}
+      WORDPRESS_DB_NAME: wordpress
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.blog.rule=Host(`${WORDPRESS_HOSTNAME}`)"
+      - "traefik.http.routers.blog.entrypoints=websecure"
+      - "traefik.http.routers.blog.tls.certresolver=selfhostedservices"
 
   caddy:
     container_name: caddy
@@ -212,7 +226,7 @@ services:
           dbname: invidious
         full_refresh: false
         https_only: false
-        domain:
+        domain: 
     depends_on:
       - postgres
     labels:
@@ -405,6 +419,12 @@ services:
       - teddit
       - privatebin
       - uptime-kuma
+      - libretranslate
+      - searx
+      - cryptpad
+      - invidious
+      - p2pool
+      
     environment:
       MONEROD_TOR_SERVICE_HOSTS: 18089:monerod:18089
       MONEROD_TOR_SERVICE_VERSION: '3'
@@ -416,6 +436,17 @@ services:
       PASTE_TOR_SERVICE_VERSION: '3'
       UPTIME-KUMA_TOR_SERVICE_HOSTS: 80:uptime-kuma:8080
       UPTIME-KUMA_TOR_SERVICE_VERSION: '3'
+      LIBRETRANSLATE_TOR_SERVICE_HOSTS: 80:LIBRETRANSLATE:8080
+      LIBRETRANSLATE_TOR_SERVICE_VERSION: '3'
+      SEARX_TOR_SERVICE_HOSTS: 80:SEARX:8080
+      SEARX_TOR_SERVICE_VERSION: '3'
+      P2POOL_TOR_SERVICE_HOSTS: 80:P2POOL:8080
+      P2POOL_TOR_SERVICE_VERSION: '3'
+      CRYPTPAD_TOR_SERVICE_HOSTS: 80:CRYPTPAD:8080
+      CRYPTPAD_TOR_SERVICE_VERSION: '3'
+      INVIDIOUS_TOR_SERVICE_HOSTS: 80:INVIDIOUS:8080
+      INVIDIOUS_TOR_SERVICE_VERSION: '3'
+      
       
       TOR_ENABLE_VANGUARDS: 'true'
 
@@ -460,3 +491,5 @@ volumes:
   postgresdata:
   caddy-data:
   caddy-config:
+  db_data:
+  wordpress_data:
