@@ -73,6 +73,14 @@ Edit the Nitter configuration file:
 * Searx
   * Generate MORTY_KEY `sed -i "s|ReplaceWithARealKey\!|$(openssl rand -base64 33)|g" .env`
 
+* P2Pool
+  * Hugepages are very important for optimal mining performance. You need to enable them first using the following commands:
+  * ```sudo sysctl vm.nr_hugepages=3072
+sudo bash -c "echo vm.nr_hugepages=3072 >> /etc/sysctl.conf"
+```
+
+Note: If your VPS or Server does not have enough RAM you can reduce it by using 1168 instead of 3072
+
 Start-up the services with Docker Compose:
 
 * `docker-compose up -d`
