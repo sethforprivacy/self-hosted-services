@@ -147,11 +147,11 @@ services:
         hard: 1000000
 
     volumes:
-      - ./data/blob:/cryptpad/blob
-      - ./data/block:/cryptpad/block
-      - ./customize:/cryptpad/customize
-      - ./data/data:/cryptpad/data
-      - ./data/files:/cryptpad/datastore
+      - cryptpad-blob:/cryptpad/blob
+      - cryptpad-block:/cryptpad/block
+      - cryptpad-customize:/cryptpad/customize
+      - cryptpad-data:/cryptpad/data
+      - cryptpad-datastores:/cryptpad/datastore
       - ./data/config.js:/cryptpad/config/config.js
 
     labels:
@@ -191,14 +191,14 @@ services:
     ports:
       - 3333:3333
       - 37889:37889
-    command:
-      - "--wallet $${YOUR_WALLET_ADDRESS}"
-      - "--stratum 0.0.0.0:3333"
-      - "--p2p 0.0.0.0:37889"
-      - "--loglevel 0"
-      - "--addpeers 65.21.227.114:37889,node.sethforprivacy.com:37889"
-      - "--host monerod"
-      - "--rpc-port 18089"
+    command: >-
+      --wallet "${YOUR_WALLET_ADDRESS}"
+      --stratum 0.0.0.0:3333
+      --p2p 0.0.0.0:37889
+      --loglevel 0
+      --addpeers 65.21.227.114:37889,node.sethforprivacy.com:37889
+      --host monerod
+     --rpc-port 18089
 
   postgres:
     image: postgres:10
