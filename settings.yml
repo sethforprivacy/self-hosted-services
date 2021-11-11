@@ -109,13 +109,13 @@ outgoing: # communication with search engines
   enabled_plugins:
     - 'Hostname replace'
   hostname_replace:
-    '(.*\.)?youtube\.com$':           'invidious.valduna.at'
-    '(.*\.)?youtu\.be$':              'invidious.valduna.at'
+    '(.*\.)?youtube\.com$':           'invidious.mydomain.com'
+    '(.*\.)?youtu\.be$':              'invidious.mydomain.com'
 #   '(.*\.)?youtube-noocookie\.com$': 'yotter.example.com'
-    '(.*\.)?reddit\.com$':            'teddit.valduna.at'
-    '(.*\.)?redd\.it$':               'teddit.valduna.at'
-    '(www\.)?twitter\.com$':          'nitter.valduna.at'
-    '(www\.)?wikipedia\.com$':        'wikiless.valduna.at'
+    '(.*\.)?reddit\.com$':            'teddit.mydomain.com'
+    '(.*\.)?redd\.it$':               'teddit.mydomain.com'
+    '(www\.)?twitter\.com$':          'nitter.mydomain.com'
+#    '(www\.)?wikipedia\.com$':        'wikiless.mydomain.com'
 checker:
     # disable checker when in debug mode
     off_when_debug: True
