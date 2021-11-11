@@ -65,6 +65,10 @@ Edit the `docker-compose.yml` file and paste your Monero address in the p2pool s
 
 You also need to add your invidious subdomain in the docker-compose.yml file. Currently under `domain` it is blank
 
+ALSO IMPORTANT:
+
+Searx will automatically redirect youtube, twitter and reddit results to your instances. But for this to work you need to change the domains under the `settings.yml` file. Just press CTRL+F and search for invidious.
+
 Note that all hostnames used must already have DNS entries configured with your domain provider in order for certificate generation to function properly.
 
 Edit the Nitter configuration file:
