@@ -14,6 +14,20 @@ This repository contains everything you need to start self-hosting a core set of
 
 * [Nextcloud](https://github.com/nextcloud/server)
   * A self-hosted server for hosting files, photos, backups, contacts, calendars, and much more
+* [Uptime-kuma](https://github.com/louislam/uptime-kuma)
+  * It is a self-hosted monitoring tool like "Uptime Robot"
+* [Libretranslate](https://github.com/LibreTranslate/LibreTranslate)
+  * Free and Open Source Machine Translation API, entirely self-hosted
+* [Searx](https://github.com/searx/searx)
+  * a privacy-respecting, hackable metasearch engine
+* [Wordpress](https://github.com/WordPress/WordPress)
+  * WordPress is a free and open-source content management system (Website Builder)
+* [Cryptpad](https://github.com/xwiki-labs/cryptpad)
+  * CryptPad is a collaboration suite that is end-to-end-encrypted and open-source
+* [P2Pool](https://github.com/SChernykh/p2pool)
+  * Decentralized pool for Monero mining
+* [Invidious](https://github.com/iv-org/invidious)
+  * Invidious is an alternative front-end to YouTube 
 * [Monero](https://github.com/sethforprivacy/simple-monerod-docker)
   * A self-sovereign, private-by-default, digital cash
   * This service runs a pruned Monero node, allowing you to connect your own Monero wallet(s) directly to your own node
@@ -45,38 +59,11 @@ cd self-hosted-services
 
 Once cloned, set the necessary passwords and desired sub-domains in the `.env` file (*PLEASE DO NOT COPY THE FOLLOWING CONFIG, CHANGE THE PASSWORDS AND HOSTNAMES APPROPRIATELY IN YOUR LOCAL `.env` FILE*):
 
-```ini
-# Nextcloud Variables
-NEXTCLOUD_HOSTNAME=nextcloud.mydomain.com
-NEXTCLOUD_ADMIN_USER=
-NEXTCLOUD_ADMIN_PASSWORD=
-POSTGRES_PASSWORD=
+ALSO:
 
-# Wallabag Variables
-WALLABAG_HOSTNAME=wallabag.mydomain.com
-WALLABAG_DB_ROOT_PASS=
-WALLABAG_DB_PASS=
-WALLABAG_URL=https://wallabag.mydomain.com
+Edit the docker-compose.yml file and paste your Monero address in the p2pool service under "wallet" like this: `wallet YOUR_WALLET_ADDRESS HERE`
 
-# Teddit Variables
-TEDDIT_HOSTNAME=teddit.mydomain.com
-
-# Nitter Variables
-NITTER_HOSTNAME=nitter.mydomain.com
-
-# Traefik Variables
-TRAEFIK_HOSTNAME=traefik.mydomain.com
-
-# Heimdall Variables
-DASHBOARD_HOSTNAME=dashboard.mydomain.com
-DASHBOARD_TZ=America/New York
-
-# Privatebin Variables
-PRIVATEBIN_HOSTNAME=paste.mydomain.com
-
-# Let's Encrypt Variables
-LE_EMAIL_ADDRESS=myemail@pm.me
-```
+You also need to add your invidious subdomain in the docker-compose.yml file. Currently under `domain` it is blank
 
 Note that all hostnames used must already have DNS entries configured with your domain provider in order for certificate generation to function properly.
 
