@@ -57,10 +57,6 @@ cd self-hosted-services
 
 Once cloned, set the necessary passwords and desired sub-domains in the `.env` file (*PLEASE DO NOT COPY THE FOLLOWING CONFIG, CHANGE THE PASSWORDS AND HOSTNAMES APPROPRIATELY IN YOUR LOCAL `.env` FILE*)
 
-VERY IMPORTANT:
-
-Searx will automatically redirect youtube, twitter and reddit results to your instances. But for this to work you need to change the domains under the `settings.yml` file. Just press CTRL+F and search for invidious.
-
 Note that all hostnames used must already have DNS entries configured with your domain provider in order for certificate generation to function properly.
 
 Edit the Nitter configuration file:
