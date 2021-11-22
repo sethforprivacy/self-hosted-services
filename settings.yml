@@ -1796,4 +1796,4 @@ default_doi_resolver: 'oadoi.org'
 # Morty configuration
 result_proxy:
    url : https://searx.mydomain.com/morty/
-   key : !!binary "ReplaceWithARealKey"
+   key : !!binary "ReplaceWithARealKey!"
