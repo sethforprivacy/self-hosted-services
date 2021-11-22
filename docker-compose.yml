@@ -5,6 +5,7 @@ services:
     container_name: "traefik"
     restart: unless-stopped
     command:
+    
       - "--providers.docker=true"
       - "--providers.docker.exposedbydefault=false"
       - "--entrypoints.websecure.address=:443"
@@ -44,6 +45,18 @@ services:
       - "traefik.http.routers.translate.tls.certresolver=selfhostedservices"
       - "traefik.http.services.translate.loadbalancer.server.port=5000"
 
+  bitwarden:
+    image: vaultwarden/server:latest
+    container_name: bitwarden
+    restart: unless-stopped
+    volumes:
+       - bitwarden-data:/data
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.bitwarden.entrypoints=websecure"
+      - "traefik.http.routers.bitwarden.rule=Host(`${BITWARDEN_HOSTNAME}`)"
+      - "traefik.http.routers.bitwarden.tls.certresolver=selfhostedservices"
+
   db:
     image: mysql:5.7
     volumes:
@@ -77,6 +90,8 @@ services:
     container_name: filtron
     image: dalf/filtron
     restart: always
+    ports:
+      - "127.0.0.1:4041:4041"
     command: -listen 0.0.0.0:4040 -api 0.0.0.0:4041 -target searx:8080
     volumes:
       - ./rules.json:/etc/filtron/rules.json:rw
@@ -87,36 +102,18 @@ services:
       - ALL
     labels:
       - "traefik.enable=true"
-      # Filtron Router
-      - "traefik.http.routers.searx-filtron.rule=Host(`${SEARX_HOSTNAME}`)"
-      - "traefik.http.routers.searx-filtron.tls.certresolver=selfhostedservices"
-      - "traefik.http.routers.searx-filtron.middlewares=searx-dynamic-headers,searx-csp-headers,searx-api-headers"
-      - "traefik.http.routers.searx-filtron.entrypoints=websecure"
-      # Filtron Static file Router
-      - "traefik.http.routers.searx-static.rule=Host(`${SEARX_HOSTNAME}`) && PathPrefix(`/static`)"
-      - "traefik.http.routers.searx-static.tls.certresolver=selfhostedservices"
-      - "traefik.http.routers.searx-static.entrypoints=websecure"
-      - "traefik.http.routers.searx-static.middlewares=searx-static-headers,searx-csp-headers"
-      - "traefik.http.services.filtron-searx-traefik-docker.loadbalancer.server.port=4040"
-      # Header middleware for dynamic (not static) files
-      - "traefik.http.middlewares.searx-dynamic-headers.headers.customResponseHeaders.Cache-Control=no-cache, no-store"
-      - "traefik.http.middlewares.searx-dynamic-headers.headers.customResponseHeaders.Pragma=no-cache"
-      # Header middleware for searx API
-      - "traefik.http.middlewares.searx-api-headers.headers.accessControlAllowMethods=GET, OPTIONS"
-      - "traefik.http.middlewares.searx-api-headers.headers.accessControlAllowOriginList=*"
-      # Header searx CSP
-      - "traefik.http.middlewares.searx-csp-headers.headers.contentSecurityPolicy=upgrade-insecure-requests; default-src 'none'; script-src 'self'; object-src 'self'; style-src 'self' https://searx.silkky.cloud/search; form-action 'self'; font-src 'self'; frame-ancestors 'self'; base-uri 'self'; img-src * data: https://*.tile.openstreetmap.org; frame-src https://www.youtube-nocookie.com https://player.vimeo.com https://www.dailymotion.com https://www.deezer.com https://www.mixcloud.com https://w.soundcloud.com https://embed.spotify.com"
-      # Header middleware for static files
-      - "traefik.http.middlewares.searx-static-headers.headers.customResponseHeaders.Cache-Control=public, max-age=31536000"
-
-
+      - "traefik.http.routers.filtron.rule=Host(`${SEARX_HOSTNAME}`)"
+      - "traefik.http.routers.filtron.tls.certresolver=selfhostedservices"
+      - "traefik.http.routers.filtron.entrypoints=websecure"
+      - "traefik.http.services.filtron.loadbalancer.server.port=4040"
+ 
   searx:
     container_name: searx
-    image: searx/searx:latest
+    image: searxng/searxng:latest
     restart: always
     command: ${SEARX_COMMAND:-}
     volumes:
-      - ./settings.yml:/etc/searx/settings.yml:rw
+      - ./settings.yml:/etc/searxng/settings.yml:rw
     logging:
       driver: none
     environment:
@@ -131,6 +128,12 @@ services:
       - SETGID
       - SETUID
       - DAC_OVERRIDE
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.searx.rule=Host(`${SEARX_HOSTNAME}`)"
+      - "traefik.http.routers.searx.tls.certresolver=selfhostedservices"
+      - "traefik.http.routers.searx.entrypoints=websecure"
+      - "traefik.http.services.searx.loadbalancer.server.port=8080"
 
   morty:
     container_name: morty
@@ -140,20 +143,12 @@ services:
     environment:
       - MORTY_KEY=${MORTY_KEY}
       - MORTY_ADDRESS=0.0.0.0:3030
-    logging:
-      driver: none
-    read_only: true
-    cap_drop:
-      - ALL
     labels:
       - "traefik.enable=true"
-      - "traefik.http.routers.searx-morty.rule=Host(`${SEARX_HOSTNAME}`) && PathPrefix(`/morty`)"
-      - "traefik.http.routers.searx-morty.tls.certresolver=letsencrypt"
-      - "traefik.http.routers.searx-morty.entrypoints=websecure"
-      - "traefik.http.routers.searx-morty.middlewares=searx-dynamic-headers,searx-morty-csp-headers"
-      - "traefik.http.services.searx-morty.loadbalancer.server.port=3030"
-      # Header middleware for morty CSP
-      - "traefik.http.middlewares.searx-morty-csp-headers.headers.contentSecurityPolicy=default-src 'none'; style-src 'self' 'unsafe-inline'; form-action 'self'; frame-ancestors 'self'; base-uri 'self'; img-src 'self' data:; font-src 's>src 'self'; frame-src 'self'"
+      - "traefik.http.routers.morty.rule=Host(`${SEARX_HOSTNAME}`) && PathPrefix(`/morty`)"
+      - "traefik.http.routers.morty.tls.certresolver=selfhostedservices"
+      - "traefik.http.routers.morty.entrypoints=websecure"
+      - "traefik.http.services.morty.loadbalancer.server.port=3030"      
 
   cryptpad:
     image: promasu/cryptpad:nginx
@@ -161,6 +156,7 @@ services:
     restart: unless-stopped
     environment:
       - CPAD_MAIN_DOMAIN=${PAD_HOSTNAME}
+      - CPAD_SANDBOX_DOMAIN=${PAD_HOSTNAME}/sandbox
       # Traefik can't use HTTP2 to communicate with cryptpat_websocket
       # A workaroung is disabling HTTP2 in Nginx
       - CPAD_HTTP2_DISABLE=true
@@ -264,7 +260,7 @@ services:
       - "traefik.http.routers.invidious.rule=Host(`${INVIDIOUS_HOSTNAME}`)"
       - "traefik.http.routers.invidious.entrypoints=websecure"
       - "traefik.http.routers.invidious.tls.certresolver=selfhostedservices"
-      - "traefik.http.services.translate.loadbalancer.server.port=3000"
+      - "traefik.http.services.invidious.loadbalancer.server.port=3000"
   autoheal:
     restart: always
     image: willfarrell/autoheal
@@ -440,6 +436,34 @@ services:
       - "traefik.http.routers.privatebin.entrypoints=websecure"
       - "traefik.http.routers.privatebin.tls.certresolver=selfhostedservices"
 
+  redis:
+    image: redis:6-alpine
+    hostname: redis
+    volumes:
+      - send_redis-data:/data
+
+  send:
+    image: registry.gitlab.com/timvisee/send:latest
+    container_name: send
+    restart: unless-stopped
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.send.rule=Host(`${SEND_HOSTNAME}`)"
+      - "traefik.http.routers.send.entrypoints=websecure"
+      - "traefik.http.routers.send.tls.certresolver=selfhostedservices"
+      - "traefik.http.services.send.loadbalancer.server.port=1443"
+
+    environment:
+      - NODE_ENV=production
+      # Networking
+      - VIRTUAL_HOST=${SEND_HOSTNAME}
+      - VIRTUAL_PORT=443
+      - BASE_URL=https://${SEND_HOSTNAME}
+      # Redis
+      - REDIS_HOST=redis
+      # Storage Limit
+      - MAX_FILE_SIZE=2147483648
+
   tor:
     image: goldy/tor-hidden-service:latest
     container_name: tor
@@ -469,7 +493,7 @@ services:
       UPTIME-KUMA_TOR_SERVICE_VERSION: '3'
       LIBRETRANSLATE_TOR_SERVICE_HOSTS: 80:LIBRETRANSLATE:5000
       LIBRETRANSLATE_TOR_SERVICE_VERSION: '3'
-      SEARX_TOR_SERVICE_HOSTS: 80:SEARX:8888
+      SEARX_TOR_SERVICE_HOSTS: 80:SEARX:8080
       SEARX_TOR_SERVICE_VERSION: '3'
       P2POOL_TOR_SERVICE_HOSTS: 80:P2POOL:3333
       P2POOL_TOR_SERVICE_VERSION: '3'
@@ -519,8 +543,6 @@ volumes:
   uptime-kuma:
   p2pool-data:
   postgresdata:
-  caddy-data:
-  caddy-config:
   db_data:
   wordpress_data:
   cryptpad-blob:
@@ -528,3 +550,6 @@ volumes:
   cryptpad-customize:
   cryptpad-data:
   cryptpad-datastores:
+  send_redis-data:
+  bitwarden-data:
+  data-redis:
