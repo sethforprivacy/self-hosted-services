@@ -25,8 +25,8 @@ This repository contains everything you need to start self-hosting a core set of
   * A privacy-preserving Reddit front-end
 * [Wallabag](https://github.com/wallabag/wallabag)
   * A privacy-preserving article reader in the vein of Pocket
-* [Heimdall Dashboard](https://heimdall.site/)
-  * A dashboard for viewing stats and status of services running behind Traefik
+* [Monero blockchain explorer](https://github.com/moneroexamples/onion-monero-blockchain-explorer)
+  * A self-hosted Monero blockchain explorer
 
 *NOTE: If you do not want to run one of the services above simply comment out or delete the relevant service section from `docker-compose.yml`.*
 
@@ -73,6 +73,9 @@ DASHBOARD_TZ=America/New York
 
 # Privatebin Variables
 PRIVATEBIN_HOSTNAME=paste.mydomain.com
+
+# Monero explorer variables
+EXPLORER_HOSTNAME=explorer.mydomain.com
 
 # Let's Encrypt Variables
 LE_EMAIL_ADDRESS=myemail@pm.me
@@ -138,7 +141,6 @@ If you decide to run this and use these services, please don't forget to donate 
 * [Nitter](https://github.com/zedeus/nitter#nitter)
 * [Teddit](https://codeberg.org/teddit/teddit#teddit)
 * [Wallabag](https://liberapay.com/wallabag/donate)
-* [Heimdall](https://github.com/linuxserver/Heimdall)
 
 ## Potential Future Services
 
