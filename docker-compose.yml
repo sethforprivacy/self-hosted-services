@@ -1,4 +1,4 @@
-version: '3.5'
+version: '3'
 services:
   traefik:
     image: "traefik:v2.5"
@@ -20,27 +20,6 @@ services:
     volumes:
       - "./letsencrypt:/letsencrypt"
       - "/var/run/docker.sock:/var/run/docker.sock:ro"
-  
-   heimdall:
-      image: linuxserver/heimdall
-      container_name: heimdall
-      restart: unless-stopped
-      volumes:
-        - heimdall:/config
-      environment:
-        - PUID=1000
-        - PGID=1000
-        - TZ=${DASHBOARD_TZ}
-      healthcheck:
-        test: ["CMD", "wget" ,"--no-verbose", "--tries=1", "--spider", "http://localhost"]
-        interval: 1m
-        timeout: 3s
-      labels:
-        - "traefik.enable=true"
-        - "traefik.http.routers.dashboard.rule=Host(`${DASHBOARD_HOSTNAME}`)"
-        - "traefik.http.services.dashboard.loadbalancer.server.port=80"
-        - "traefik.http.routers.dashboard.entrypoints=websecure"
-        - "traefik.http.routers.dashboard.tls.certresolver=selfhostedservices"
 
   wallabag:
     image: wallabag/wallabag:latest
@@ -166,11 +145,6 @@ services:
       - POSTGRES_PASSWORD=${POSTGRES_PASSWORD}
       - POSTGRES_DB=nextcloud
       - REDIS_HOST=redis
-    # TODO: Fix healthcheck, breaks Traefik due to trusted domains
-    # healthcheck:
-    #   test: ["CMD", "wget" ,"--no-verbose", "--tries=1", "--spider", "http://localhost"]
-    #   interval: 1m
-    #   timeout: 3s
     depends_on:
       - nextcloud_db
       - redis
@@ -225,6 +199,22 @@ services:
       - "traefik.http.routers.privatebin.entrypoints=websecure"
       - "traefik.http.routers.privatebin.tls.certresolver=selfhostedservices"
 
+  explorer:
+    image: sethsimmons/xmrblocks:latest
+    container_name: explorer
+    restart: unless-stopped
+    volumes:
+      - bitmonero:/home/monero/.bitmonero
+    command: ["./xmrblocks --enable-json-api --enable-autorefresh-option --enable-emission-monitor --deamon-url=monerod:18089 --enable-pusher"]
+    depends_on:
+      - monerod
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.explorer.rule=Host(`${EXPLORER_HOSTNAME}`)"
+      - "traefik.http.services.explorer.loadbalancer.server.port=8081"
+      - "traefik.http.routers.explorer.entrypoints=websecure"
+      - "traefik.http.routers.explorer.tls.certresolver=selfhostedservices"
+
   tor:
     image: goldy/tor-hidden-service:latest
     container_name: tor
@@ -234,6 +224,7 @@ services:
       - nitter
       - teddit
       - privatebin
+      - explorer
     environment:
       MONEROD_TOR_SERVICE_HOSTS: 18089:monerod:18089
       MONEROD_TOR_SERVICE_VERSION: '3'
@@ -243,6 +234,8 @@ services:
       TEDDIT_TOR_SERVICE_VERSION: '3'
       PASTE_TOR_SERVICE_HOSTS: 80:privatebin:8080
       PASTE_TOR_SERVICE_VERSION: '3'
+      EXPLORER_TOR_SERVICE_HOSTS: 80:explorer:8081
+      EXPLORER_TOR_SERVICE_VERSION: '3'
       
       TOR_ENABLE_VANGUARDS: 'true'
 
@@ -275,7 +268,6 @@ services:
 
 volumes:
   bitmonero:
-  heimdall:
   redis-data:
   nextcloud:
   nextcloud_db:
