@@ -41,6 +41,8 @@ This repository contains everything you need to start self-hosting a core set of
   * A privacy-preserving Reddit front-end
 * [Wallabag](https://github.com/wallabag/wallabag)
   * A privacy-preserving article reader in the vein of Pocket
+* [Monero blockchain explorer](https://github.com/moneroexamples/onion-monero-blockchain-explorer)
+  * A self-hosted Monero blockchain explorer
 
 *NOTE: If you do not want to run one of the services above simply comment out or delete the relevant service section from `docker-compose.yml`.*
 
