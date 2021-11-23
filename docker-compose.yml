@@ -90,8 +90,6 @@ services:
     container_name: filtron
     image: dalf/filtron
     restart: always
-    ports:
-      - "127.0.0.1:4041:4041"
     command: -listen 0.0.0.0:4040 -api 0.0.0.0:4041 -target searx:8080
     volumes:
       - ./rules.json:/etc/filtron/rules.json:rw
@@ -102,10 +100,10 @@ services:
       - ALL
     labels:
       - "traefik.enable=true"
-      - "traefik.http.routers.filtron.rule=Host(`${SEARX_HOSTNAME}`)"
+      - "traefik.http.routers.filtron.rule=Host(`${FILTRON_HOSTNAME}`)"
       - "traefik.http.routers.filtron.tls.certresolver=selfhostedservices"
       - "traefik.http.routers.filtron.entrypoints=websecure"
-      - "traefik.http.services.filtron.loadbalancer.server.port=4040"
+      - "traefik.http.services.filtron.loadbalancer.server.port=4041"
  
   searx:
     container_name: searx
@@ -128,12 +126,6 @@ services:
       - SETGID
       - SETUID
       - DAC_OVERRIDE
-    labels:
-      - "traefik.enable=true"
-      - "traefik.http.routers.searx.rule=Host(`${SEARX_HOSTNAME}`)"
-      - "traefik.http.routers.searx.tls.certresolver=selfhostedservices"
-      - "traefik.http.routers.searx.entrypoints=websecure"
-      - "traefik.http.services.searx.loadbalancer.server.port=8080"
 
   morty:
     container_name: morty
@@ -225,34 +217,15 @@ services:
     restart: always
     volumes:
       - postgresdata:/var/lib/postgresql/data
-      - ./config/sql:/config/sql
-      - ./docker/init-invidious-db.sh:/docker-entrypoint-initdb.d/init-invidious-db.sh
     environment:
       POSTGRES_DB: invidious
       POSTGRES_USER: kemal
-      POSTGRES_PASSWORD: kemal
+      POSTGRES_PASSWORD: ${POSTGRES_PW}
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U $$POSTGRES_USER -d $$POSTGRES_DB"]
   invidious:
     image: quay.io/invidious/invidious:latest
     restart: always
-    mem_limit: 1024M
-    cpus: 0.5
-    environment:
-      # Adapted from ./config/config.yml
-      INVIDIOUS_CONFIG: |
-        channel_threads: 1
-        check_tables: true
-        feed_threads: 1
-        db:
-          user: kemal
-          password: kemal
-          host: postgres
-          port: 5432
-          dbname: invidious
-        full_refresh: false
-        https_only: false
-        domain: 
     depends_on:
       - postgres
     labels:
@@ -436,12 +409,6 @@ services:
       - "traefik.http.routers.privatebin.entrypoints=websecure"
       - "traefik.http.routers.privatebin.tls.certresolver=selfhostedservices"
 
-  redis:
-    image: redis:6-alpine
-    hostname: redis
-    volumes:
-      - send_redis-data:/data
-
   send:
     image: registry.gitlab.com/timvisee/send:latest
     container_name: send
@@ -464,6 +431,22 @@ services:
       # Storage Limit
       - MAX_FILE_SIZE=2147483648
 
+  explorer:
+    image: sethsimmons/xmrblocks:latest
+    container_name: explorer
+    restart: unless-stopped
+    volumes:
+      - bitmonero:/home/monero/.bitmonero
+    command: ["./xmrblocks --enable-json-api --enable-autorefresh-option --enable-emission-monitor --deamon-url=monerod:18089 --enable-pusher"]
+    depends_on:
+      - monerod
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.explorer.rule=Host(`${EXPLORER_HOSTNAME}`)"
+      - "traefik.http.services.explorer.loadbalancer.server.port=8081"
+      - "traefik.http.routers.explorer.entrypoints=websecure"
+      - "traefik.http.routers.explorer.tls.certresolver=selfhostedservices"
+
   tor:
     image: goldy/tor-hidden-service:latest
     container_name: tor
@@ -472,11 +455,9 @@ services:
       - monerod
       - nitter
       - teddit
-      - privatebin
-      - uptime-kuma
       - libretranslate
       - searx
-      - cryptpad
+      - explorer
       - invidious
       - p2pool
       
@@ -495,7 +476,8 @@ services:
       P2POOL_TOR_SERVICE_VERSION: '3'
       INVIDIOUS_TOR_SERVICE_HOSTS: 80:INVIDIOUS:3000
       INVIDIOUS_TOR_SERVICE_VERSION: '3'
-      
+      EXPLORER_TOR_SERVICE_HOSTS: 80:explorer:8081
+      EXPLORER_TOR_SERVICE_VERSION: '3'
       
       TOR_ENABLE_VANGUARDS: 'true'
 
@@ -512,6 +494,7 @@ services:
     restart: unless-stopped
     volumes:
       - redis-data:/var/lib/redis
+      - send_redis-data:/data
     healthcheck:
       test: ["CMD", "redis-cli", "ping"]
       interval: 1s
