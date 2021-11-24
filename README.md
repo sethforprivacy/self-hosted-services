@@ -37,7 +37,7 @@ This repository contains everything you need to start self-hosting a core set of
   * A privacy-preserving Twitter front-end
 * [PrivateBin](https://privatebin.info/)
   * A privacy-preserving and encrypted-by-default pastebin
-* [Teddit](https://codeberg.org/teddit/teddit)
+* [Libreddit](https://github.com/spikecodes/libreddit)
   * A privacy-preserving Reddit front-end
 * [Wallabag](https://github.com/wallabag/wallabag)
   * A privacy-preserving article reader in the vein of Pocket
