@@ -190,7 +190,13 @@ services:
       --enable-dns-blocklist
       --prune-blockchain
       --zmq-pub=tcp://0.0.0.0:18083
-
+      labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.monero.rule=Host(`${MONERO_HOSTNAME}`)"
+      - "traefik.http.routers.monero.entrypoints=websecure"
+      - "traefik.http.routers.monero.tls.certresolver=selfhostedservices"
+      - "traefik.http.services.monero.loadbalancer.server.port=18089"
+      
   p2pool:
     image: sethsimmons/p2pool:latest
     restart: unless-stopped
