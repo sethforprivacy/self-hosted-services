@@ -173,7 +173,7 @@ services:
       - "traefik.http.routers.pad.tls.certresolver=selfhostedservices"
 
   monerod:
-    image: sethsimmons/simple-monerod:latest
+    image: sethsimmons/simple-monerod:p2pool-api-v0.17
     restart: unless-stopped
     container_name: monerod
     volumes:
