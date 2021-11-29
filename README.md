@@ -179,7 +179,7 @@ If you decide to run this and use these services, please don't forget to donate 
 * [Wallabag](https://liberapay.com/wallabag/donate)
 * [Invidious](https://github.com/iv-org/invidious#donate)
 * [P2Pool](https://github.com/SChernykh/p2pool#donations)
-* [CryptPad}(https://github.com/xwiki-labs/cryptpad)
+* [CryptPad](https://github.com/xwiki-labs/cryptpad)
 * [WordPress](https://wordpressfoundation.org/donate/)
 * [Uptime-kuma](https://opencollective.com/uptime-kuma)
 * [SearXNG](https://www.searx.me/static/donate.html)

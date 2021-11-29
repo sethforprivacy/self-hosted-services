@@ -173,11 +173,11 @@ services:
       - "traefik.http.routers.pad.tls.certresolver=selfhostedservices"
 
   monerod:
-    image: sethsimmons/simple-monerod:latest
+    image: sethsimmons/simple-monerod:p2pool-api-v0.17
     restart: unless-stopped
     container_name: monerod
     volumes:
-      - bitmonero:/home/monero
+      - bitmonero:/home/monero/.bitmonero
     ports:
       - 18080:18080
       - 18089:18089
@@ -190,7 +190,13 @@ services:
       --enable-dns-blocklist
       --prune-blockchain
       --zmq-pub=tcp://0.0.0.0:18083
-
+      labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.monero.rule=Host(`${MONERO_HOSTNAME}`)"
+      - "traefik.http.routers.monero.entrypoints=websecure"
+      - "traefik.http.routers.monero.tls.certresolver=selfhostedservices"
+      - "traefik.http.services.monero.loadbalancer.server.port=18089"
+      
   p2pool:
     image: sethsimmons/p2pool:latest
     restart: unless-stopped
@@ -424,7 +430,7 @@ services:
     restart: unless-stopped
     volumes:
       - bitmonero:/home/monero/.bitmonero
-    command: ["./xmrblocks --enable-json-api --enable-autorefresh-option --enable-emission-monitor --deamon-url=monerod:18089 --enable-pusher"]
+    command: ["./xmrblocks --enable-json-api --enable-autorefresh-option --enable-emission-monitor --daemon-url=monerod:18089 --enable-pusher"]
     depends_on:
       - monerod
     labels:
