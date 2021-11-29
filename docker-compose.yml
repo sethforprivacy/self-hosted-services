@@ -444,7 +444,6 @@ services:
       - teddit
       - libretranslate
       - searx
-      - explorer
       - invidious
       - p2pool
       - privatebin
