@@ -190,7 +190,7 @@ services:
       --enable-dns-blocklist
       --prune-blockchain
       --zmq-pub=tcp://0.0.0.0:18083
-      labels:
+    labels:
       - "traefik.enable=true"
       - "traefik.http.routers.monero.rule=Host(`${MONERO_HOSTNAME}`)"
       - "traefik.http.routers.monero.entrypoints=websecure"
@@ -229,6 +229,7 @@ services:
       POSTGRES_PASSWORD: ${POSTGRES_PW}
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U $$POSTGRES_USER -d $$POSTGRES_DB"]
+  
   invidious:
     image: quay.io/invidious/invidious:latest
     restart: always
