@@ -5,7 +5,6 @@ services:
     container_name: "traefik"
     restart: unless-stopped
     command:
-    
       - "--providers.docker=true"
       - "--providers.docker.exposedbydefault=false"
       - "--entrypoints.websecure.address=:443"
@@ -344,6 +343,8 @@ services:
       - NEXTCLOUD_ADMIN_PASSWORD=${NEXTCLOUD_ADMIN_PASSWORD}
       - NEXTCLOUD_TRUSTED_DOMAINS=${NEXTCLOUD_HOSTNAME}
       - TRUSTED_PROXIES=172.16.0.0/12
+      - OVERWRITEHOST=${NEXTCLOUD_HOSTNAME}
+      - OVERWRITEPROTOCOL=https
       - POSTGRES_HOST=nextcloud_db
       - POSTGRES_USER=nextcloud
       - POSTGRES_PASSWORD=${POSTGRES_PASSWORD}
@@ -354,18 +355,24 @@ services:
       - redis
     labels:
       - "traefik.enable=true"
-      - "traefik.http.routers.nextcloud.rule=Host(`${NEXTCLOUD_HOSTNAME}`)"
-      - "traefik.http.routers.nextcloud.middlewares=nextcloud,nextcloud_redirect"
-      - "traefik.http.routers.nextcloud.entrypoints=websecure"
-      - "traefik.http.middlewares.nextcloud.headers.stsSeconds=155520011"
+      - "traefik.http.middlewares.nextcloud.headers.browserXSSFilter=true"
+      - "traefik.http.middlewares.nextcloud.headers.contentTypeNosniff=true"
       - "traefik.http.middlewares.nextcloud.headers.stsIncludeSubdomains=true"
       - "traefik.http.middlewares.nextcloud.headers.stsPreload=true"
-      - "traefik.http.middlewares.nextcloud.headers.contentTypeNosniff=true"
-      - "traefik.http.middlewares.nextcloud.headers.browserXSSFilter=true"
+      - "traefik.http.middlewares.nextcloud.headers.stsSeconds=155520011"
       - "traefik.http.middlewares.nextcloud_redirect.redirectregex.permanent=true"
-      - "traefik.http.middlewares.nextcloud_redirect.redirectregex.regex=/.well-known/(card|cal)dav"
-      - "traefik.http.middlewares.nextcloud_redirect.redirectregex.replacement=/remote.php/dav/"
+      - "traefik.http.middlewares.nextcloud_redirect.redirectregex.regex=https://(.*)/.well-known/(card|cal)dav"
+      - "traefik.http.middlewares.nextcloud_redirect.redirectregex.replacement=https://$${1}/remote.php/dav/"
+      - "traefik.http.routers.nextcloud.entrypoints=websecure"
+      - "traefik.http.routers.nextcloud.middlewares=nextcloud,nextcloud_redirect,nextcloud-https"
+      - "traefik.http.routers.nextcloud.rule=Host(`${NEXTCLOUD_HOSTNAME}`)"
       - "traefik.http.routers.nextcloud.tls.certresolver=selfhostedservices"
+      - "traefik.http.services.nextcloud.loadbalancer.server.port=8080"
+      - "traefik.http.middlewares.nextcloud.headers.customRequestHeaders.X-Forwarded-Proto=https"
+      - "traefik.http.middlewares.nextcloud-https.redirectscheme.scheme=https"
+      - "traefik.http.routers.nextcloud-http.entrypoints=web"
+      - "traefik.http.routers.nextcloud-http.rule=Host(`${NEXTCLOUD_HOSTNAME}`)"
+      - "traefik.http.routers.nextcloud-http.middlewares=nextcloud-https@docker"
 
   nextcloud_db:
     image: postgres:alpine
