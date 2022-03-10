@@ -99,10 +99,10 @@ services:
       - ALL
     labels:
       - "traefik.enable=true"
-      - "traefik.http.routers.filtron.rule=Host(`${FILTRON_HOSTNAME}`)"
+      - "traefik.http.routers.filtron.rule=Host(`${SEARX_HOSTNAME}`)"
       - "traefik.http.routers.filtron.tls.certresolver=selfhostedservices"
       - "traefik.http.routers.filtron.entrypoints=websecure"
-      - "traefik.http.services.filtron.loadbalancer.server.port=4041"
+      - "traefik.http.services.filtron.loadbalancer.server.port=4040"
  
   searx:
     container_name: searx
@@ -113,6 +113,8 @@ services:
       - ./settings.yml:/etc/searxng/settings.yml:rw
     logging:
       driver: none
+    expose:
+      - 8080
     environment:
       - BIND_ADDRESS=0.0.0.0:8080
       - BASE_URL=https://${SEARX_HOSTNAME}/
