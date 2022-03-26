@@ -510,6 +510,11 @@ services:
     image: jellyfin/jellyfin
     container_name: jellyfin
     restart: "unless-stopped"
+    ports:
+      - 8096:8096
+      - 8920:8920
+      - 1900:1900
+      - 7359:7359
     volumes:
       - jellyfin-data:/config
       - jellyfin-data:/cache
