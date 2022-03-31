@@ -510,20 +510,13 @@ services:
     image: jellyfin/jellyfin
     container_name: jellyfin
     restart: "unless-stopped"
-    ports:
-      - 8096:8096
-      - 8920:8920
-      - 1900:1900
-      - 7359:7359
+    network_mode: "host"
     volumes:
       - jellyfin-data:/config
       - jellyfin-data:/cache
       - <LOCAL_DIR_TO_MOVIES>:/movies:ro
     environment:
-      - PUID=132
-      - PGID=132
-      - TZ=Europe/London
-      - JELLYFIN_PublishedServerUrl=`${JELLYFIN_HOSTNAME}`
+      - JELLYFIN_PublishedServerUrl=https://${JELLYFIN_HOSTNAME}
     labels:
       - "traefik.enable=true"
       - "traefik.http.routers.jellyfin.rule=Host(`${JELLYFIN_HOSTNAME}`)"
