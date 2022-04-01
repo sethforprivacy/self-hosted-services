@@ -510,7 +510,6 @@ services:
     image: jellyfin/jellyfin
     container_name: jellyfin
     restart: "unless-stopped"
-    network_mode: "host"
     volumes:
       - jellyfin-data:/config
       - jellyfin-data:/cache
