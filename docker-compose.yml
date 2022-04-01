@@ -514,6 +514,9 @@ services:
       - jellyfin-data:/config
       - jellyfin-data:/cache
       - <LOCAL_DIR_TO_MOVIES>:/movies:ro
+    devices:
+      - /dev/dri/renderD128:/dev/dri/renderD128
+      - /dev/dri/card0:/dev/dri/card0
     environment:
       - JELLYFIN_PublishedServerUrl=https://${JELLYFIN_HOSTNAME}
     labels:
