@@ -43,6 +43,8 @@ This repository contains everything you need to start self-hosting a core set of
   * A privacy-preserving article reader in the vein of Pocket
 * [Monero blockchain explorer](https://github.com/moneroexamples/onion-monero-blockchain-explorer)
   * A self-hosted Monero blockchain explorer
+* [Jellyfin](https://github.com/jellyfin/jellyfin)
+  * A software media system with no strings attached, no premium licenses or features, and no hidden agendas
 
 *NOTE: If you do not want to run one of the services above simply comment out or delete the relevant service section from `docker-compose.yml`.*
 
@@ -168,6 +170,7 @@ As this simply helps you get these services running, using each service is outsi
 * [Uptime-kuma](https://github.com/louislam/uptime-kuma/wiki/)
 * [SearXNG](https://searxng.github.io/searxng/)
 * [Libretranslate](https://github.com/LibreTranslate/LibreTranslate)
+* [Jellyfin](https://jellyfin.org/docs)
 
 ## Donations
 
@@ -183,11 +186,7 @@ If you decide to run this and use these services, please don't forget to donate 
 * [WordPress](https://wordpressfoundation.org/donate/)
 * [Uptime-kuma](https://opencollective.com/uptime-kuma)
 * [SearXNG](https://www.searx.me/static/donate.html)
-
-## Potential Future Services
-
-* [Jellyfin](https://jellyfin.org/)
-  * A self-hosted media server
+* [Jellyfin](https://opencollective.com/jellyfin)
 
 ## Additional Resources
 

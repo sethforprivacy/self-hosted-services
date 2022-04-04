@@ -506,6 +506,26 @@ services:
       timeout: 3s
       retries: 30
 
+  jellyfin:
+    image: jellyfin/jellyfin
+    container_name: jellyfin
+    restart: "unless-stopped"
+    volumes:
+      - jellyfin-data:/config
+      - jellyfin-data:/cache
+      - <LOCAL_DIR_TO_MOVIES>:/movies:ro
+    devices:
+      - /dev/dri/renderD128:/dev/dri/renderD128
+      - /dev/dri/card0:/dev/dri/card0
+    environment:
+      - JELLYFIN_PublishedServerUrl=https://${JELLYFIN_HOSTNAME}
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.jellyfin.rule=Host(`${JELLYFIN_HOSTNAME}`)"
+      - "traefik.http.routers.jellyfin.entrypoints=websecure"
+      - "traefik.http.routers.jellyfin.tls.certresolver=selfhostedservices"
+      - "traefik.http.services.jellyfin.loadbalancer.server.port=8096"
+
   watchtower:
     image: containrrr/watchtower:latest
     container_name: watchtower
@@ -535,3 +555,4 @@ volumes:
   send_redis-data:
   bitwarden-data:
   data-redis:
+  jellyfin-data:
