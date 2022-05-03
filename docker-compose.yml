@@ -223,7 +223,7 @@ services:
     image: postgres:10
     restart: always
     volumes:
-      - postgresdata:/var/lib/postgresql/data
+      - postgresdata-invidious:/var/lib/postgresql/data
     environment:
       POSTGRES_DB: invidious
       POSTGRES_USER: kemal
@@ -242,6 +242,57 @@ services:
       - "traefik.http.routers.invidious.entrypoints=websecure"
       - "traefik.http.routers.invidious.tls.certresolver=selfhostedservices"
       - "traefik.http.services.invidious.loadbalancer.server.port=3000"
+
+  postgres-peertube:
+    image: postgres:10
+    restart: unless-stopped
+    volumes:
+      - postgresdata-peertube:/var/lib/postgresql/data
+    environment:
+      POSTGRES_DB: peertube
+      POSTGRES_USER: kemal
+      POSTGRES_PASSWORD: ${POSTGRES_PW}
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U $$POSTGRES_USER -d $$POSTGRES_DB"]
+
+  peertube:
+    image: chocobozzz/peertube:production-bullseye
+    volumes:
+      - peertube-assets:/app/client/dist
+      - ./docker-volume/data:/data
+      - ./docker-volume/config:/config
+    depends_on:
+      - postgres-peertube
+      - redis
+      - postfix
+    environment:
+      PEERTUBE_WEBSERVER_HOSTNAME: ${PEERTUBE_HOSTNAME}
+      POSTGRES_DB: peertube
+      PEERTUBE_DB_USERNAME: kemal
+      PEERTUBE_DB_PASSWORD: ${POSTGRES_PW}
+      PEERTUBE_DB_HOSTNAME: postgres-peertube
+      PEERTUBE_SMTP_HOSTNAME: postfix
+      OPENDKIM_RequireSafeKeys: "no"
+      PEERTUBE_WEBSERVER_HTTPS: "true"
+      PEERTUBE_SMTP_PORT: 25
+      PEERTUBE_SMTP_TLS: "false"
+      PEERTUBE_SMTP_DISABLE_STARTTLS: "false"
+      PEERTUBE_ADMIN_EMAIL: ${LE_EMAIL_ADDRESS}
+    restart: "always"
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.peertube.rule=Host(`${PEERTUBE_HOSTNAME}`)"
+      - "traefik.http.routers.peertube.entrypoints=websecure"
+      - "traefik.http.routers.peertube.tls.certresolver=selfhostedservices"
+      - "traefik.http.services.peertube.loadbalancer.server.port=9000"
+
+  postfix:
+    image: mwader/postfix-relay
+    environment:
+      POSTFIX_myhostname: ${PEERTUBE_HOSTNAME}
+    volumes:
+      - ./docker-volume/opendkim/keys:/etc/opendkim/keys
+    restart: "always"
 
   wallabag:
     image: wallabag/wallabag:latest
@@ -461,6 +512,7 @@ services:
       - libretranslate
       - searx
       - invidious
+      - peertube
       - p2pool
       - privatebin
       - explorer
@@ -479,6 +531,8 @@ services:
       P2POOL_TOR_SERVICE_VERSION: '3'
       INVIDIOUS_TOR_SERVICE_HOSTS: 80:INVIDIOUS:3000
       INVIDIOUS_TOR_SERVICE_VERSION: '3'
+      PEERTUBE_TOR_SERVICE_HOSTS: 80:PEERTUBE:9000
+      PEERTUBE_TOR_SERVICE_VERSION: '3'
       PASTE_TOR_SERVICE_HOSTS: 80:privatebin:8080
       PASTE_TOR_SERVICE_VERSION: '3'
       EXPLORER_TOR_SERVICE_HOSTS: 80:explorer:8081
@@ -544,7 +598,8 @@ volumes:
   privatebin-data:
   uptime-kuma:
   p2pool-data:
-  postgresdata:
+  postgresdata-invidious:
+  postgresdata-peertube:
   db_data:
   wordpress_data:
   cryptpad-blob:
@@ -556,3 +611,4 @@ volumes:
   bitwarden-data:
   data-redis:
   jellyfin-data:
+  peertube-assets:
