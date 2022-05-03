@@ -45,6 +45,8 @@ This repository contains everything you need to start self-hosting a core set of
   * A self-hosted Monero blockchain explorer
 * [Jellyfin](https://github.com/jellyfin/jellyfin)
   * A software media system with no strings attached, no premium licenses or features, and no hidden agendas
+* [PeerTube](https://github.com/Chocobozzz/PeerTube)
+  * Peer-to-peer video server
 
 *NOTE: If you do not want to run one of the services above simply comment out or delete the relevant service section from `docker-compose.yml`.*
 
