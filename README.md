@@ -43,6 +43,8 @@ This repository contains everything you need to start self-hosting a core set of
   * A privacy-preserving article reader in the vein of Pocket
 * [Monero blockchain explorer](https://github.com/moneroexamples/onion-monero-blockchain-explorer)
   * A self-hosted Monero blockchain explorer
+* [Conduit](https://conduit.rs)
+  * A self-hosted Matrix homeserver written in Rust
 * [Jellyfin](https://github.com/jellyfin/jellyfin)
   * A software media system with no strings attached, no premium licenses or features, and no hidden agendas
 
@@ -118,6 +120,17 @@ sudo bash -c "echo vm.nr_hugepages=3072 >> /etc/sysctl.conf"
 ```
 Note: If your VPS or Server does not have enough RAM you can reduce it by using 1168 instead of 3072
 
+* Conduit
+  * Start by planning out your setup. If you are willing to dedicate the domain you want to use as the handle:
+  * @user:domain.tld, then just set that in Conduit_Hostname in .env and in conduit/wellknown.conf as the whole <subdomain>.<domain> part
+  * If you wish to have a website, or other stuff on that domain instead, then you will need to dive-in some way or another.
+  * Let's say you're okay with having the handle look like @user:subdomain.domain.tld, then just set that in the files mentioned above.
+  * If you wish, to have the domain in the handle, and in use at the same time, you will need to dive into the docker-compose.yml itself
+  * and set the line with comment: `#Change to root domain if desired` to the root domain, otherwise keep the subdomain everywhere else
+  * Set up redirect on the route `https://domain.tld/.well-known/matrix/*` to `https://subdomain.domain.tld/.well-known/matrix/:splat`
+  * At least this setup was tested. Feel free to come up with easier ways to this setup.
+  * Otherwise if you get stuck, leave an issue, someone will surely help out.
+
 Start-up the services with Docker Compose:
 
 * `docker-compose up -d`
@@ -170,6 +183,7 @@ As this simply helps you get these services running, using each service is outsi
 * [Uptime-kuma](https://github.com/louislam/uptime-kuma/wiki/)
 * [SearXNG](https://searxng.github.io/searxng/)
 * [Libretranslate](https://github.com/LibreTranslate/LibreTranslate)
+* [Conduit](https://gitlab.com/famedly/conduit#how-can-i-deploy-my-own)
 * [Jellyfin](https://jellyfin.org/docs)
 
 ## Donations
@@ -186,6 +200,7 @@ If you decide to run this and use these services, please don't forget to donate 
 * [WordPress](https://wordpressfoundation.org/donate/)
 * [Uptime-kuma](https://opencollective.com/uptime-kuma)
 * [SearXNG](https://www.searx.me/static/donate.html)
+* [Conduit](https://conduit.rs/#donate)
 * [Jellyfin](https://opencollective.com/jellyfin)
 
 ## Additional Resources
