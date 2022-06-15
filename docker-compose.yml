@@ -492,6 +492,48 @@ services:
         loglevel = INFO
     volumes:
       - tor-keys:/var/lib/tor/hidden_service/
+  
+  conduit:
+    image: matrixconduit/matrix-conduit:latest
+    restart: unless-stopped
+    user: root
+    volumes:
+        - conduit-data:/var/lib/matrix-conduit/
+    environment:
+            CONDUIT_SERVER_NAME: ${CONDUIT_HOSTNAME} #Change to root domain if desired
+            CONDUIT_DATABASE_PATH: /var/lib/matrix-conduit/
+            CONDUIT_DATABASE_BACKEND: rocksdb
+            CONDUIT_PORT: 6167
+            CONDUIT_MAX_REQUEST_SIZE: 20_000_000 # in bytes, ~20 MB
+            CONDUIT_ALLOW_REGISTRATION: 'true'
+            CONDUIT_ALLOW_FEDERATION: 'true'
+            CONDUIT_TRUSTED_SERVERS: '["matrix.org"]'
+            CONDUIT_ADDRESS: 0.0.0.0
+            CONDUIT_CONFIG: ''
+    labels:
+            - "traefik.enable=true"
+            - "traefik.http.routers.conduit.rule=Host(`${CONDUIT_HOSTNAME}`)"
+            - "traefik.http.routers.conduit.tls=true"
+            - "traefik.http.routers.conduit.tls.certresolver=selfhostedservices"
+            - "traefik.http.routers.conduit.middlewares=cors-headers@docker"
+            - "traefik.http.middlewares.cors-headers.headers.accessControlAllowOriginList=*"
+            - "traefik.http.middlewares.cors-headers.headers.accessControlAllowHeaders=Origin, X-Requested-With, Content-Type, Accept, Authorization"
+            - "traefik.http.middlewares.cors-headers.headers.accessControlAllowMethods=GET, POST, PUT, DELETE, OPTIONS"
+
+  well-known:
+    image: nginx:latest
+    restart: unless-stopped
+    volumes:
+      - ./conduit/wellknown.conf:/etc/nginx/conf.d/matrix.conf
+    labels:
+            - "traefik.enable=true"
+            - "traefik.http.routers.wellknown.rule=Host(`${CONDUIT_HOSTNAME}`) && PathPrefix(`/.well-known/matrix`)"
+            - "traefik.http.routers.wellknown.tls=true"
+            - "traefik.http.routers.wellknown.tls.certresolver=selfhostedservices"
+            - "traefik.http.routers.wellknown.middlewares=cors-headers@docker"
+            - "traefik.http.middlewares.cors-headers.headers.accessControlAllowOriginList=*"
+            - "traefik.http.middlewares.cors-headers.headers.accessControlAllowHeaders=Origin, X-Requested-With, Content-Type, Accept, Authorization"
+            - "traefik.http.middlewares.cors-headers.headers.accessControlAllowMethods=GET, POST, PUT, DELETE, OPTIONS"
 
   redis:
     image: redis:alpine
@@ -555,4 +597,5 @@ volumes:
   send_redis-data:
   bitwarden-data:
   data-redis:
+  conduit-data:
   jellyfin-data:
