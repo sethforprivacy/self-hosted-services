@@ -47,6 +47,8 @@ This repository contains everything you need to start self-hosting a core set of
   * A self-hosted Matrix homeserver written in Rust
 * [Jellyfin](https://github.com/jellyfin/jellyfin)
   * A software media system with no strings attached, no premium licenses or features, and no hidden agendas
+* [Wikiless](https://codeberg.org/orenom/Wikiless)
+  * A free open source alternative Wikipedia front-end focused on privacy
 
 *NOTE: If you do not want to run one of the services above simply comment out or delete the relevant service section from `docker-compose.yml`.*
 
@@ -63,43 +65,7 @@ git clone https://github.com/sethforprivacy/self-hosted-services.git
 cd self-hosted-services
 ```
 
-Once cloned, set the necessary passwords and desired sub-domains in the `.env` file (*PLEASE DO NOT COPY THE FOLLOWING CONFIG, CHANGE THE PASSWORDS AND HOSTNAMES APPROPRIATELY IN YOUR LOCAL `.env` FILE*):
-
-```ini
-# Nextcloud Variables
-NEXTCLOUD_HOSTNAME=nextcloud.mydomain.com
-NEXTCLOUD_ADMIN_USER=
-NEXTCLOUD_ADMIN_PASSWORD=
-POSTGRES_PASSWORD=
-
-# Wallabag Variables
-WALLABAG_HOSTNAME=wallabag.mydomain.com
-WALLABAG_DB_ROOT_PASS=
-WALLABAG_DB_PASS=
-WALLABAG_URL=https://wallabag.mydomain.com
-
-# Teddit Variables
-TEDDIT_HOSTNAME=teddit.mydomain.com
-
-# Nitter Variables
-NITTER_HOSTNAME=nitter.mydomain.com
-
-# Traefik Variables
-TRAEFIK_HOSTNAME=traefik.mydomain.com
-
-# Heimdall Variables
-DASHBOARD_HOSTNAME=dashboard.mydomain.com
-DASHBOARD_TZ=America/New York
-
-# Privatebin Variables
-PRIVATEBIN_HOSTNAME=paste.mydomain.com
-
-# Monero explorer variables
-EXPLORER_HOSTNAME=explorer.mydomain.com
-
-# Let's Encrypt Variables
-LE_EMAIL_ADDRESS=myemail@pm.me
-```
+Once cloned, set the necessary passwords and desired sub-domains in the `.env` file.
 
 Note that all hostnames used must already have DNS entries configured with your domain provider in order for certificate generation to function properly.
 
@@ -131,6 +97,9 @@ Note: If your VPS or Server does not have enough RAM you can reduce it by using 
   * At least this setup was tested. Feel free to come up with easier ways to this setup.
   * Otherwise if you get stuck, leave an issue, someone will surely help out.
 
+* Wikiless
+  * Edit /wikiless/config.js.template to your liking and setup the domain in the .env file.
+  
 Start-up the services with Docker Compose:
 
 * `docker-compose up -d`
