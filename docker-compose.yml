@@ -575,6 +575,23 @@ services:
       - "traefik.http.routers.jellyfin.entrypoints=websecure"
       - "traefik.http.routers.jellyfin.tls.certresolver=selfhostedservices"
       - "traefik.http.services.jellyfin.loadbalancer.server.port=8096"
+      
+  wikiless:
+    image: node:16-alpine
+    environment:
+      REDIS_HOST: redis
+    volumes:
+      - .:/app
+      - ./wikiless/config.js.template:/app/config.js
+      - wikiless-data:/app/node_modules
+    working_dir: /app
+    command: npm start
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.wikiless.rule=Host(`${WIKILESS_HOSTNAME}`)"
+      - "traefik.http.routers.wikiless.entrypoints=websecure"
+      - "traefik.http.routers.wikiless.tls.certresolver=selfhostedservices"
+      - "traefik.http.services.wikiless.loadbalancer.server.port=8080"
 
   watchtower:
     image: containrrr/watchtower:latest
@@ -607,3 +624,4 @@ volumes:
   data-redis:
   conduit-data:
   jellyfin-data:
+  wikiless-data:
