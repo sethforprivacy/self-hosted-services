@@ -613,7 +613,7 @@ services:
       PEERTUBE_SMTP_PORT: 25
       PEERTUBE_SMTP_TLS: "false"
       PEERTUBE_SMTP_DISABLE_STARTTLS: "false"
-      PEERTUBE_ADMIN_EMAIL: jbakosi@protonmail.com
+      PEERTUBE_ADMIN_EMAIL: ${LE_EMAIL_ADDRESS}
     restart: "always"
     labels:
       - "traefik.enable=true"
