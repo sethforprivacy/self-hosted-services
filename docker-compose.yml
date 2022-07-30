@@ -242,58 +242,15 @@ services:
       - "traefik.http.routers.invidious.entrypoints=websecure"
       - "traefik.http.routers.invidious.tls.certresolver=selfhostedservices"
       - "traefik.http.services.invidious.loadbalancer.server.port=3000"
-
-  postgres-peertube:
-    image: postgres:10
-    restart: unless-stopped
-    volumes:
-      - postgresdata-peertube:/var/lib/postgresql/data
     environment:
-      POSTGRES_DB: peertube
-      POSTGRES_USER: kemal
-      POSTGRES_PASSWORD: ${POSTGRES_PW}
-    healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U $$POSTGRES_USER -d $$POSTGRES_DB"]
-
-  peertube:
-    image: chocobozzz/peertube:production-bullseye
-    volumes:
-      - peertube-assets:/app/client/dist
-      - ./docker-volume/data:/data
-      - ./docker-volume/config:/config
-    depends_on:
-      - postgres-peertube
-      - redis
-      - postfix
-    environment:
-      PEERTUBE_WEBSERVER_HOSTNAME: ${PEERTUBE_HOSTNAME}
-      POSTGRES_DB: peertube
-      PEERTUBE_DB_USERNAME: kemal
-      PEERTUBE_DB_PASSWORD: ${POSTGRES_PW}
-      PEERTUBE_DB_HOSTNAME: postgres-peertube
-      PEERTUBE_SMTP_HOSTNAME: postfix
-      OPENDKIM_RequireSafeKeys: "no"
-      PEERTUBE_WEBSERVER_HTTPS: "true"
-      PEERTUBE_SMTP_PORT: 25
-      PEERTUBE_SMTP_TLS: "false"
-      PEERTUBE_SMTP_DISABLE_STARTTLS: "false"
-      PEERTUBE_ADMIN_EMAIL: ${LE_EMAIL_ADDRESS}
-    restart: "always"
-    labels:
-      - "traefik.enable=true"
-      - "traefik.http.routers.peertube.rule=Host(`${PEERTUBE_HOSTNAME}`)"
-      - "traefik.http.routers.peertube.entrypoints=websecure"
-      - "traefik.http.routers.peertube.tls.certresolver=selfhostedservices"
-      - "traefik.http.services.peertube.loadbalancer.server.port=9000"
-
-  postfix:
-    image: mwader/postfix-relay
-    environment:
-      POSTFIX_myhostname: ${PEERTUBE_HOSTNAME}
-    volumes:
-      - ./docker-volume/opendkim/keys:/etc/opendkim/keys
-    restart: "always"
-
+      INVIDIOUS_CONFIG: |
+        db:
+          dbname: invidious
+          user: kemal
+          password: ${POSTGRES_PW}
+          host: postgres
+          port: 5432
+          
   wallabag:
     image: wallabag/wallabag:latest
     container_name: wallabag
@@ -420,7 +377,7 @@ services:
       - "traefik.http.routers.nextcloud.middlewares=nextcloud,nextcloud_redirect,nextcloud-https"
       - "traefik.http.routers.nextcloud.rule=Host(`${NEXTCLOUD_HOSTNAME}`)"
       - "traefik.http.routers.nextcloud.tls.certresolver=selfhostedservices"
-      - "traefik.http.services.nextcloud.loadbalancer.server.port=8080"
+      - "traefik.http.services.nextcloud.loadbalancer.server.port=80"
       - "traefik.http.middlewares.nextcloud.headers.customRequestHeaders.X-Forwarded-Proto=https"
       - "traefik.http.middlewares.nextcloud-https.redirectscheme.scheme=https"
       - "traefik.http.routers.nextcloud-http.entrypoints=web"
@@ -546,6 +503,48 @@ services:
         loglevel = INFO
     volumes:
       - tor-keys:/var/lib/tor/hidden_service/
+  
+  conduit:
+    image: matrixconduit/matrix-conduit:latest
+    restart: unless-stopped
+    user: root
+    volumes:
+        - conduit-data:/var/lib/matrix-conduit/
+    environment:
+            CONDUIT_SERVER_NAME: ${CONDUIT_HOSTNAME} #Change to root domain if desired
+            CONDUIT_DATABASE_PATH: /var/lib/matrix-conduit/
+            CONDUIT_DATABASE_BACKEND: rocksdb
+            CONDUIT_PORT: 6167
+            CONDUIT_MAX_REQUEST_SIZE: 20_000_000 # in bytes, ~20 MB
+            CONDUIT_ALLOW_REGISTRATION: 'true'
+            CONDUIT_ALLOW_FEDERATION: 'true'
+            CONDUIT_TRUSTED_SERVERS: '["matrix.org"]'
+            CONDUIT_ADDRESS: 0.0.0.0
+            CONDUIT_CONFIG: ''
+    labels:
+            - "traefik.enable=true"
+            - "traefik.http.routers.conduit.rule=Host(`${CONDUIT_HOSTNAME}`)"
+            - "traefik.http.routers.conduit.tls=true"
+            - "traefik.http.routers.conduit.tls.certresolver=selfhostedservices"
+            - "traefik.http.routers.conduit.middlewares=cors-headers@docker"
+            - "traefik.http.middlewares.cors-headers.headers.accessControlAllowOriginList=*"
+            - "traefik.http.middlewares.cors-headers.headers.accessControlAllowHeaders=Origin, X-Requested-With, Content-Type, Accept, Authorization"
+            - "traefik.http.middlewares.cors-headers.headers.accessControlAllowMethods=GET, POST, PUT, DELETE, OPTIONS"
+
+  well-known:
+    image: nginx:latest
+    restart: unless-stopped
+    volumes:
+      - ./conduit/wellknown.conf:/etc/nginx/conf.d/matrix.conf
+    labels:
+            - "traefik.enable=true"
+            - "traefik.http.routers.wellknown.rule=Host(`${CONDUIT_HOSTNAME}`) && PathPrefix(`/.well-known/matrix`)"
+            - "traefik.http.routers.wellknown.tls=true"
+            - "traefik.http.routers.wellknown.tls.certresolver=selfhostedservices"
+            - "traefik.http.routers.wellknown.middlewares=cors-headers@docker"
+            - "traefik.http.middlewares.cors-headers.headers.accessControlAllowOriginList=*"
+            - "traefik.http.middlewares.cors-headers.headers.accessControlAllowHeaders=Origin, X-Requested-With, Content-Type, Accept, Authorization"
+            - "traefik.http.middlewares.cors-headers.headers.accessControlAllowMethods=GET, POST, PUT, DELETE, OPTIONS"
 
   redis:
     image: redis:alpine
@@ -580,6 +579,57 @@ services:
       - "traefik.http.routers.jellyfin.tls.certresolver=selfhostedservices"
       - "traefik.http.services.jellyfin.loadbalancer.server.port=8096"
 
+  postgres-peertube:
+    image: postgres:10
+    restart: unless-stopped
+    volumes:
+      - postgresdata-peertube:/var/lib/postgresql/data
+    environment:
+      POSTGRES_DB: peertube
+      POSTGRES_USER: kemal
+      POSTGRES_PASSWORD: ${POSTGRES_PW}
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U $$POSTGRES_USER -d $$POSTGRES_DB"]
+
+  peertube:
+    image: chocobozzz/peertube:production-bullseye
+    volumes:
+      - peertube-assets:/app/client/dist
+      - ./docker-volume/data:/data
+      - ./docker-volume/config:/config
+    depends_on:
+      - postgres-peertube
+      - redis
+      - postfix
+    environment:
+      PEERTUBE_WEBSERVER_HOSTNAME: ${PEERTUBE_HOSTNAME}
+      POSTGRES_DB: peertube
+      PEERTUBE_DB_USERNAME: kemal
+      PEERTUBE_DB_PASSWORD: ${POSTGRES_PW}
+      PEERTUBE_DB_HOSTNAME: postgres-peertube
+      PEERTUBE_SMTP_HOSTNAME: postfix
+      OPENDKIM_RequireSafeKeys: "no"
+      PEERTUBE_WEBSERVER_HTTPS: "true"
+      PEERTUBE_SMTP_PORT: 25
+      PEERTUBE_SMTP_TLS: "false"
+      PEERTUBE_SMTP_DISABLE_STARTTLS: "false"
+      PEERTUBE_ADMIN_EMAIL: jbakosi@protonmail.com
+    restart: "always"
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.peertube.rule=Host(`${PEERTUBE_HOSTNAME}`)"
+      - "traefik.http.routers.peertube.entrypoints=websecure"
+      - "traefik.http.routers.peertube.tls.certresolver=selfhostedservices"
+      - "traefik.http.services.peertube.loadbalancer.server.port=9000"
+
+  postfix:
+    image: mwader/postfix-relay
+    environment:
+      POSTFIX_myhostname: ${PEERTUBE_HOSTNAME}
+    volumes:
+      - ./docker-volume/opendkim/keys:/etc/opendkim/keys
+    restart: "always"
+
   watchtower:
     image: containrrr/watchtower:latest
     container_name: watchtower
@@ -600,6 +650,7 @@ volumes:
   p2pool-data:
   postgresdata-invidious:
   postgresdata-peertube:
+  peertube-assets:
   db_data:
   wordpress_data:
   cryptpad-blob:
@@ -610,5 +661,5 @@ volumes:
   send_redis-data:
   bitwarden-data:
   data-redis:
+  conduit-data:
   jellyfin-data:
-  peertube-assets:
