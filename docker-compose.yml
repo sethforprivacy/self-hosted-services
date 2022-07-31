@@ -443,7 +443,7 @@ services:
       - MAX_FILE_SIZE=2147483648
 
   explorer:
-    image: sethsimmons/xmrblocks:latest
+    image: vdo1138/xmrblocks:latest
     container_name: explorer
     restart: unless-stopped
     volumes:
