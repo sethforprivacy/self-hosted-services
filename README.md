@@ -215,3 +215,8 @@ If you decide to run this and use these services, please don't forget to donate 
   * This Docker container makes it incredibly easy to expose Tor Hidden Services of other running containers
 * https://github.com/containrrr/watchtower
   * Watchtower automates updating base images for other running containers
+
+
+### Infrastructure model
+
+![Infrastructure model](.infragenie/infrastructure_model.png)
