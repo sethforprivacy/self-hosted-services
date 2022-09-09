@@ -2,6 +2,8 @@
 
 This repository contains everything you need to start self-hosting a core set of privacy-preserving services that I have found helpful, all run via a common [Docker Compose](https://docs.docker.com/compose/) configuration using [Let's Encrypt](https://letsencrypt.org/) for SSL certificates.
 
+***NOTE: I am in the process of migrating all apps here to https://github.com/meienberger/runtipi, as that is a much better overall solution for this type of project. Once done I will archive this repo and direct all users to that. You can follow the porting process here: https://github.com/sethforprivacy/runtipi-appstore/pulls/@sethforprivacy***
+
 ## Requirements
 
 * [Git](https://git-scm.com/downloads)
