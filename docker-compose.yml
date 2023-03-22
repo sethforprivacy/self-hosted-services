@@ -576,6 +576,32 @@ services:
       - "traefik.http.routers.jellyfin.tls.certresolver=selfhostedservices"
       - "traefik.http.services.jellyfin.loadbalancer.server.port=8096"
 
+  netdata:
+    image: netdata/netdata
+    container_name: netdata
+    restart: unless-stopped
+    ports:
+      - 19999:19999
+    cap_add:
+      - SYS_PTRACE
+    security_opt:
+      - apparmor:unconfined
+    volumes:
+      - netdataconfig:/etc/netdata
+      - netdatalib:/var/lib/netdata
+      - netdatacache:/var/cache/netdata
+      - /etc/passwd:/host/etc/passwd:ro
+      - /etc/group:/host/etc/group:ro
+      - /proc:/host/proc:ro
+      - /sys:/host/sys:ro
+      - /etc/os-release:/host/etc/os-release:ro
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.netdata.rule=Host(`${NETDATA_HOSTNAME}`)"
+      - "traefik.http.routers.netdata.entrypoints=websecure"
+      - "traefik.http.services.netdata.loadbalancer.server.port=19999"
+      - "traefik.http.routers.netdata.tls.certresolver=selfhostedservices"
+
   watchtower:
     image: containrrr/watchtower:latest
     container_name: watchtower
@@ -607,3 +633,6 @@ volumes:
   data-redis:
   conduit-data:
   jellyfin-data:
+  netdataconfig:
+  netdatalib:
+  netdatacache:
