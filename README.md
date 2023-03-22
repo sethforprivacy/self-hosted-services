@@ -49,6 +49,8 @@ This repository contains everything you need to start self-hosting a core set of
   * A self-hosted Matrix homeserver written in Rust
 * [Jellyfin](https://github.com/jellyfin/jellyfin)
   * A software media system with no strings attached, no premium licenses or features, and no hidden agendas
+* [Netdata](https://github.com/netdata/netdata)
+  * Netdata is a distributed, real-time, performance and health monitoring platform for systems, hardware, containers and applications.
 
 *NOTE: If you do not want to run one of the services above simply comment out or delete the relevant service section from `docker-compose.yml`.*
 
